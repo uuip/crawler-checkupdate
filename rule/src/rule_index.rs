@@ -6,7 +6,7 @@ use crate::rules;
 use crate::FnSignature;
 
 pub static FNRULES: Lazy<HashMap<&'static str, FnSignature>> = Lazy::new(|| {
-    let mapper: [(&str, FnSignature); 7] = [
+    let mapper: [(&str, FnSignature); 8] = [
         ("DevManView", rules::parse_dev_man_view),
         ("EmEditor", rules::parse_emeditor),
         ("FS Capture", rules::parse_faststone),
@@ -14,6 +14,7 @@ pub static FNRULES: Lazy<HashMap<&'static str, FnSignature>> = Lazy::new(|| {
         ("VMware", rules::parse_vmware),
         ("WinRAR", rules::parse_winrar),
         ("PDF-XChange", rules::parse_pdf_xchange),
+        ("VSCode", rules::parse_vscode),
     ];
     HashMap::from(mapper)
 });

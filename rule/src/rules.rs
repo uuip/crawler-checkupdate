@@ -82,3 +82,12 @@ pub(crate) fn parse_pdf_xchange(resp: &str) -> Option<String> {
     let element = html.select(&selector).next()?.text().nth(2)?.trim();
     Some(element.to_owned())
 }
+
+pub(crate) fn parse_vscode(resp: &str) -> Option<String> {
+    let html = Html::parse_document(resp);
+    let selector = Selector::parse("h1").unwrap();
+    let element = html.select(&selector).next()?.text().next()?.trim();
+    let re=Regex::new(r" (\d+\.\d+)").unwrap();
+    let rst=re.captures(element).unwrap().get(1).unwrap().as_str();
+    Some(rst.to_owned())
+}
