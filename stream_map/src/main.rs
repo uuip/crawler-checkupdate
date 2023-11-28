@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use futures::{stream, StreamExt};
+use futures_util::{stream, StreamExt};
 use colored::*;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, EntityTrait};
 use sea_orm::ActiveValue::Set;
