@@ -3,10 +3,10 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use futures_util::{stream, StreamExt};
 use colored::*;
-use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, EntityTrait};
+use futures_util::{stream, StreamExt};
 use sea_orm::ActiveValue::Set;
+use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, EntityTrait};
 use serde_json::json;
 
 use models::ver;

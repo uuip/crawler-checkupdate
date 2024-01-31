@@ -87,7 +87,7 @@ pub(crate) fn parse_vscode(resp: &str) -> Option<String> {
     let html = Html::parse_document(resp);
     let selector = Selector::parse("h1").unwrap();
     let element = html.select(&selector).next()?.text().next()?.trim();
-    let re=Regex::new(r" (\d+\.\d+(\.\d+)?)").unwrap();
-    let rst=re.captures(element).unwrap().get(1).unwrap().as_str();
+    let re = Regex::new(r" (\d+\.\d+(\.\d+)?)").unwrap();
+    let rst = re.captures(element).unwrap().get(1).unwrap().as_str();
     Some(rst.to_owned())
 }

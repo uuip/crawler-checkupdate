@@ -1,10 +1,11 @@
 use std::env;
 use std::ops::Deref;
+use std::time::Duration;
 
 use anyhow::{anyhow, Error};
 use once_cell::sync::Lazy;
-use reqwest::{Client, header, Response};
 use reqwest::header::HeaderMap;
+use reqwest::{header, Client, Response};
 
 use models::ver;
 
@@ -16,7 +17,13 @@ const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:112.0) Gecko/2010
 static CLIENT: Lazy<Client> = Lazy::new(|| {
     let mut headers: HeaderMap = HeaderMap::new();
     headers.insert(header::USER_AGENT, header::HeaderValue::from_static(UA));
-    Client::builder().default_headers(headers).gzip(true).build().unwrap()
+    Client::builder()
+        .default_headers(headers)
+        .gzip(true)
+        .tcp_keepalive(Some(Duration::from_secs(10)))
+        .http2_keep_alive_interval(Some(Duration::from_secs(10)))
+        .build()
+        .unwrap()
 });
 
 pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
