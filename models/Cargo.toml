@@ -9,5 +9,4 @@ edition = "2021"
 sea-orm = { version = "0.12.12", features = [
     "sqlx-sqlite", "runtime-tokio-native-tls", "macros"
 ] }
-serde = "1.0.196"
-
+serde = { version = "1.0.196", features = ["derive"] }
