@@ -1,0 +1,16 @@
+[workspace]
+members = [
+    # "joinset",
+    "stream_map",
+    # "joinset_mpsc",
+    # "joinset_callback",
+    # "join_task",
+    "rule",
+    "models",
+]
+resolver = "2"
+
+[profile.release]
+lto = true
+strip = true
+codegen-units = 1
