@@ -56,6 +56,9 @@ pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
         let j: serde_json::Value = resp.json::<serde_json::Value>().await?;
         let v: String = match app.name.as_str() {
             "PyCharm" => j["PCP"][0]["version"].to_string(),
+            "CLion" => j["CL"][0]["version"].to_string(),
+            "GoLand" => j["GO"][0]["version"].to_string(),
+            "RustRover" => j["RR"][0]["version"].to_string(),
             "Clash" => j["name"].to_string(),
             _ => j["tag_name"].to_string(),
         };
