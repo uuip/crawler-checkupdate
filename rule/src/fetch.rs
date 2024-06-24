@@ -1,5 +1,4 @@
 use std::env;
-use std::ops::Deref;
 use std::time::Duration;
 
 use anyhow::{anyhow, Error};
@@ -39,14 +38,14 @@ pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
             .get(&app.url)
             .send()
             .await?;
-        let arg: &str = resp.headers()["location"].to_str()?;
+        let arg: &str = resp.headers()["location"].to_str().unwrap();
         find_version(app, arg).ok_or(anyhow!("解析版本错误"))
     } else if app.json == 1 {
         let resp: Response = {
             if app.url.starts_with("https://api.github.com") {
                 CLIENT
                     .get(&app.url)
-                    .header("Authorization", format!("token {}", TOKEN.deref()))
+                    .header("Authorization", format!("token {}", *TOKEN))
                     .send()
                     .await?
             } else {

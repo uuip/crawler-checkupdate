@@ -19,7 +19,6 @@ type SharedStatus<'a> = Arc<Mutex<HashMap<&'a str, Vec<&'a str>>>>;
 async fn main() -> anyhow::Result<()> {
     let opt: &str = if cfg!(windows) {
         let _ = enable_ansi_support::enable_ansi_support();
-        //"postgres://postgres:postgres@127.0.0.1/postgres"
         "sqlite:///C:/Users/sharp/AppData/Local/Programs/checkupdate/ver_tab.db"
     } else {
         "sqlite:///Users/sharp/Downloads/ver_tab.db"
