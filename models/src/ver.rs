@@ -10,6 +10,7 @@ pub struct Model {
     pub url: String,
     pub newversion: Option<String>,
     pub json: i8,
+    pub updated_at: Option<ChronoDateTimeLocal>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

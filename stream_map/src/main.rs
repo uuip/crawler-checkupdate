@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 
 use colored::*;
 use futures_util::{stream, StreamExt};
+use sea_orm::sqlx::types::chrono::Local;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, EntityTrait};
 use serde_json::json;
@@ -91,6 +92,7 @@ async fn update_app(app: ver::Model, db: DatabaseConnection, status: SharedStatu
     if new_ver != app.ver {
         let mut app: ver::ActiveModel = app.into();
         app.ver = Set(new_ver.to_owned());
+        app.updated_at = Set(Some(Local::now()));
         let app = app.update(&db).await.unwrap();
         println!("{} 更新为版本 {}", app.name.green(), new_ver.bright_green());
         let mut status = status.lock().unwrap();
