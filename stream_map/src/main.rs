@@ -5,6 +5,8 @@ use std::io::{stdout, Write};
 use std::sync::{Arc, Mutex};
 
 use colored::*;
+use crossterm::event;
+use crossterm::event::Event;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use futures_util::{stream, StreamExt};
 use sea_orm::sqlx::types::chrono::Local;
@@ -39,6 +41,16 @@ async fn main() -> anyhow::Result<()> {
     let aj: serde_json::Value = json!(a);
     println!("{}\n", serde_json::to_string_pretty(&aj)?);
 
+    #[cfg(windows)]
+    let apps = VerEntity::find()
+        .filter(
+            ver::Column::Platform
+                .eq("Windows")
+                .or(ver::Column::Platform.is_null()),
+        )
+        .all(&db)
+        .await?;
+    #[cfg(unix)]
     let apps = VerEntity::find()
         .filter(
             ver::Column::Platform
@@ -117,6 +129,10 @@ fn pause() {
     stdout.write_all(b"Press any key to continue...").unwrap();
     stdout.flush().unwrap();
     enable_raw_mode().unwrap();
-    crossterm::event::read().unwrap();
+    loop {
+        if let Event::Key(_) = event::read().unwrap() {
+            break;
+        }
+    }
     disable_raw_mode().unwrap();
 }

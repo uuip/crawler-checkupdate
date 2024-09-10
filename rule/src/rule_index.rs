@@ -31,7 +31,7 @@ pub static CSSRULES: Lazy<HashMap<&'static str, &str>> = Lazy::new(|| {
         ("Registry Workshop", "p"),
         ("Firefox", ".c-release-version"),
         (
-            "Navicat[Mac]",
+            "Navicat [Mac]",
             r#".release-notes-table[platform="M"] td>.note-title"#,
         ),
         (
