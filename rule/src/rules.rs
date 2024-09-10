@@ -197,7 +197,13 @@ pub(crate) fn parse_appcast(text: &str) -> Option<String> {
         .filter(|x| x.channel != "beta")
         .collect::<Vec<_>>();
     rc.sort_by(|a, b| a.pub_date.cmp(&b.pub_date));
-    rc.into_iter().last().map(|x| x.version)
+    rc.into_iter().last().map(|x| {
+        if x.version.contains(".") {
+            x.version
+        } else {
+            x.short_version
+        }
+    })
 }
 
 fn parse_dt(pub_date: &str) -> Result<DateTime<Utc>, ParseError> {
@@ -208,4 +214,3 @@ fn parse_dt(pub_date: &str) -> Result<DateTime<Utc>, ParseError> {
             NaiveDateTime::parse_from_str(pub_date, "%Y-%m-%d %H:%M:%S").map(|d| d.and_utc())
         })
 }
-

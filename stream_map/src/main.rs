@@ -1,13 +1,17 @@
-#![allow(dead_code, unused_variables)]
+#![allow(unused_variables)]
 
 use std::collections::HashMap;
+use std::io::{stdout, Write};
 use std::sync::{Arc, Mutex};
 
 use colored::*;
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use futures_util::{stream, StreamExt};
 use sea_orm::sqlx::types::chrono::Local;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter,
+};
 use serde_json::json;
 
 use models::ver;
@@ -18,12 +22,12 @@ type SharedStatus<'a> = Arc<Mutex<HashMap<&'a str, Vec<&'a str>>>>;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let opt: &str = if cfg!(windows) {
-        let _ = enable_ansi_support::enable_ansi_support();
-        "sqlite:///C:/Users/sharp/AppData/Local/Programs/checkupdate/ver_tab.db"
-    } else {
-        "sqlite:///Users/sharp/ver_tab.db"
-    };
+    #[cfg(windows)]
+    let opt = "sqlite:///C:/Users/sharp/AppData/Local/Programs/checkupdate/ver_tab.db";
+    #[cfg(windows)]
+    let _ = enable_ansi_support::enable_ansi_support();
+    #[cfg(unix)]
+    let opt = "sqlite:///Users/sharp/ver_tab.db";
     let now = std::time::SystemTime::now();
     let status: SharedStatus = Arc::new(Mutex::new(HashMap::from([
         ("success", Vec::new()),
@@ -35,7 +39,14 @@ async fn main() -> anyhow::Result<()> {
     let aj: serde_json::Value = json!(a);
     println!("{}\n", serde_json::to_string_pretty(&aj)?);
 
-    let apps = VerEntity::find().filter(ver::Column::Platform.ne("Windows").or(ver::Column::Platform.is_null())).all(&db).await?;
+    let apps = VerEntity::find()
+        .filter(
+            ver::Column::Platform
+                .ne("Windows")
+                .or(ver::Column::Platform.is_null()),
+        )
+        .all(&db)
+        .await?;
     let tasks = stream::iter(apps)
         .map(|app| {
             let db = db.clone();
@@ -53,12 +64,7 @@ async fn main() -> anyhow::Result<()> {
         status.get("success").unwrap().join(", "),
         status.get("failed").unwrap().join(", ")
     );
-    if cfg!(windows) & !cfg!(debug_assertions) {
-        let _ = std::process::Command::new("cmd.exe")
-            .arg("/c")
-            .arg("pause")
-            .status();
-    }
+    pause();
     Ok(())
 }
 
@@ -104,4 +110,13 @@ async fn update_app(app: ver::Model, db: DatabaseConnection, status: SharedStatu
         println!("{} : {}", app.name.bright_cyan(), new_ver.bright_cyan());
     }
     println!("{}", "=".repeat(36));
+}
+
+fn pause() {
+    let mut stdout = stdout();
+    stdout.write_all(b"Press any key to continue...").unwrap();
+    stdout.flush().unwrap();
+    enable_raw_mode().unwrap();
+    crossterm::event::read().unwrap();
+    disable_raw_mode().unwrap();
 }
