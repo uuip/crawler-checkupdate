@@ -7,7 +7,7 @@ use colored::*;
 use futures_util::{stream, StreamExt};
 use sea_orm::sqlx::types::chrono::Local;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, EntityTrait};
+use sea_orm::{ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter};
 use serde_json::json;
 
 use models::ver;
@@ -22,7 +22,7 @@ async fn main() -> anyhow::Result<()> {
         let _ = enable_ansi_support::enable_ansi_support();
         "sqlite:///C:/Users/sharp/AppData/Local/Programs/checkupdate/ver_tab.db"
     } else {
-        "sqlite:///Users/sharp/Downloads/ver_tab.db"
+        "sqlite:///Users/sharp/ver_tab.db"
     };
     let now = std::time::SystemTime::now();
     let status: SharedStatus = Arc::new(Mutex::new(HashMap::from([
@@ -35,7 +35,7 @@ async fn main() -> anyhow::Result<()> {
     let aj: serde_json::Value = json!(a);
     println!("{}\n", serde_json::to_string_pretty(&aj)?);
 
-    let apps = VerEntity::find().all(&db).await?;
+    let apps = VerEntity::find().filter(ver::Column::Platform.ne("Windows").or(ver::Column::Platform.is_null())).all(&db).await?;
     let tasks = stream::iter(apps)
         .map(|app| {
             let db = db.clone();
