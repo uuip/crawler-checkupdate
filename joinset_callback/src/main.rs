@@ -36,7 +36,7 @@ async fn main() -> anyhow::Result<()> {
     for app in apps {
         let msg: String = format!("{} 提取版本号失败", app.name);
         set.spawn(
-            async move { Ok((app.clone(), parse_app(&app).await.map_or(None, num_version))) },
+            async move { Ok((app.clone(), parse_app(&app).await.ok().and_then(num_version))) },
         );
     }
 

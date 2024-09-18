@@ -39,7 +39,7 @@ async fn main() -> anyhow::Result<()> {
         let msg: String = format!("{} 提取版本号失败", app.name);
         let tx = tx.clone();
         set.spawn(async move {
-            let new_ver = parse_app(&app).await.map_or(None, num_version);
+            let new_ver = parse_app(&app).await.ok().and_then(num_version);
             let _ = tx.send((app, new_ver)).await;
         });
     }
