@@ -3,6 +3,7 @@ use regex::Regex;
 
 pub use fetch::parse_app;
 
+mod appcast;
 mod fetch;
 mod rule_index;
 mod rules;

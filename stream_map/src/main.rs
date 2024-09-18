@@ -89,15 +89,21 @@ async fn main() -> anyhow::Result<()> {
 //     }
 // };
 async fn update_app(app: ver::Model, db: DatabaseConnection, status: SharedStatus<'_>) {
-    let new_ver = parse_app(&app).await.map_or_else(
-        |e| {
-            eprintln!("{:?}", e.to_string());
-            None
-        },
-        num_version,
-    );
-    let new_ver = if let Some(s) = new_ver {
-        s
+    if let Ok(Some(new_ver)) = parse_app(&app).await.map(num_version) {
+        if new_ver != app.ver {
+            let mut app: ver::ActiveModel = app.into();
+            app.ver = Set(new_ver.to_owned());
+            app.updated_at = Set(Some(Local::now()));
+            let app = app.update(&db).await.unwrap();
+            println!("{} 更新为版本 {}", app.name.green(), new_ver.bright_green());
+            let mut status = status.lock().unwrap();
+            status
+                .get_mut("success")
+                .unwrap()
+                .push(Box::leak(app.name.into_boxed_str()));
+        } else {
+            println!("{} : {}", app.name.bright_cyan(), new_ver.bright_cyan());
+        }
     } else {
         eprintln!("{} 获取版本失败\n{}", app.name, "=".repeat(36));
         let mut status = status.lock().unwrap();
@@ -107,20 +113,6 @@ async fn update_app(app: ver::Model, db: DatabaseConnection, status: SharedStatu
             .push(Box::leak(app.name.into_boxed_str()));
         return;
     };
-    if new_ver != app.ver {
-        let mut app: ver::ActiveModel = app.into();
-        app.ver = Set(new_ver.to_owned());
-        app.updated_at = Set(Some(Local::now()));
-        let app = app.update(&db).await.unwrap();
-        println!("{} 更新为版本 {}", app.name.green(), new_ver.bright_green());
-        let mut status = status.lock().unwrap();
-        status
-            .get_mut("success")
-            .unwrap()
-            .push(Box::leak(app.name.into_boxed_str()));
-    } else {
-        println!("{} : {}", app.name.bright_cyan(), new_ver.bright_cyan());
-    }
     println!("{}", "=".repeat(36));
 }
 

@@ -26,53 +26,57 @@ static CLIENT: Lazy<Client> = Lazy::new(|| {
 });
 
 pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
-    if app.name == *"Fences" {
-        let resp: Response = CLIENT.head(&app.url).send().await?;
-        let head: &str = resp.headers()["Content-Length"].to_str()?;
-        Ok(head.to_owned())
-    } else if app.name == *"EmEditor" {
-        let resp: Response = Client::builder()
-            .user_agent(UA)
-            .redirect(reqwest::redirect::Policy::none())
-            .build()?
-            .get(&app.url)
-            .send()
-            .await?;
-        let arg: &str = resp.headers()["location"].to_str().unwrap();
-        find_version(app, arg).ok_or(anyhow!("解析版本错误"))
-    } else if app.json == 1 {
-        let resp: Response = {
-            if app.url.starts_with("https://api.github.com") {
-                CLIENT
-                    .get(&app.url)
-                    .header("Authorization", format!("token {}", *TOKEN))
-                    .send()
-                    .await?
-            } else {
-                CLIENT.get(&app.url).send().await?
-            }
-        };
-        let j: serde_json::Value = resp.json::<serde_json::Value>().await?;
-        let v: String = match app.name.as_str() {
-            "PyCharm" => j["PCP"][0]["version"].to_string(),
-            "CLion" => j["CL"][0]["version"].to_string(),
-            "GoLand" => j["GO"][0]["version"].to_string(),
-            "RustRover" => j["RR"][0]["version"].to_string(),
-            "Clash" => j["name"].to_string(),
-            _ => j["tag_name"].to_string(),
-        };
-        Ok(v)
-    } else {
-        let resp: Response = CLIENT.get(&app.url).send().await?;
-        let arg: String = resp.text().await?;
-        find_version(app, &arg).ok_or(anyhow!("解析版本错误"))
+    match app.name.as_str() {
+        "Fences" => {
+            let resp: Response = CLIENT.head(&app.url).send().await?;
+            let head: &str = resp.headers()["Content-Length"].to_str()?;
+            Ok(head.to_owned())
+        }
+        "EmEditor" => {
+            let resp: Response = Client::builder()
+                .user_agent(UA)
+                .redirect(reqwest::redirect::Policy::none())
+                .build()?
+                .get(&app.url)
+                .send()
+                .await?;
+            let arg: &str = resp.headers()["location"].to_str()?;
+            find_version(app, arg).ok_or(anyhow!("解析版本错误"))
+        }
+        _ if app.json == 1 => {
+            let resp: Response = {
+                if app.url.starts_with("https://api.github.com") {
+                    CLIENT
+                        .get(&app.url)
+                        .header("Authorization", format!("token {}", *TOKEN))
+                        .send()
+                        .await?
+                } else {
+                    CLIENT.get(&app.url).send().await?
+                }
+            };
+            let j: serde_json::Value = resp.json::<serde_json::Value>().await?;
+            let v: String = match app.name.as_str() {
+                "PyCharm" => j["PCP"][0]["version"].to_string(),
+                "CLion" => j["CL"][0]["version"].to_string(),
+                "GoLand" => j["GO"][0]["version"].to_string(),
+                "RustRover" => j["RR"][0]["version"].to_string(),
+                "Clash" => j["name"].to_string(),
+                _ => j["tag_name"].to_string(),
+            };
+            Ok(v)
+        }
+        _ => {
+            let resp: Response = CLIENT.get(&app.url).send().await?;
+            let arg: String = resp.text().await?;
+            find_version(app, &arg).ok_or(anyhow!("解析版本错误"))
+        }
     }
 }
 
 fn find_version(app: &ver::Model, resp: &str) -> Option<String> {
     let app_name = app.name.as_str();
-    let func = FNRULES.get(app_name);
-    if let Some(f) = func {
+    if let Some(f) = FNRULES.get(app_name) {
         f(resp)
     } else {
         CSSRULES.get(app_name).map(|css| parse_css(resp, css))?

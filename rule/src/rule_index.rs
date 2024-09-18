@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use once_cell::sync::Lazy;
 
-use crate::rules;
 use crate::FnSignature;
+use crate::{appcast, rules};
 
 pub static FNRULES: Lazy<HashMap<&'static str, FnSignature>> = Lazy::new(|| {
     let mapper: [(&str, FnSignature); 14] = [
@@ -15,12 +15,12 @@ pub static FNRULES: Lazy<HashMap<&'static str, FnSignature>> = Lazy::new(|| {
         ("WinRAR", rules::parse_winrar),
         ("PDF-XChange", rules::parse_pdf_xchange),
         ("VSCode", rules::parse_vscode),
-        ("Postico 2", rules::parse_appcast),
-        ("Input Source Pro", rules::parse_appcast),
-        ("SwiftBar", rules::parse_appcast),
-        ("LinearMouse", rules::parse_appcast),
-        ("Docker", rules::parse_appcast),
-        ("AltTab", rules::parse_appcast),
+        ("Postico 2", appcast::parse_appcast),
+        ("Input Source Pro", appcast::parse_appcast),
+        ("SwiftBar", appcast::parse_appcast),
+        ("LinearMouse", appcast::parse_appcast),
+        ("Docker", appcast::parse_appcast),
+        ("AltTab", appcast::parse_appcast),
     ];
     HashMap::from(mapper)
 });
