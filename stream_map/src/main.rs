@@ -80,39 +80,27 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-// let new_ver: String = match parse_app(&app).await.map(num_version) {
-//     Ok(s) => s.unwrap(),
-//     Err(e) => {
-//         eprintln!("{} 获取版本失败: {}", app.name, e);
-//         println!("{}", "=".repeat(36));
-//         return;
-//     }
-// };
 async fn update_app(app: ver::Model, db: DatabaseConnection, status: SharedStatus<'_>) {
-    if let Ok(Some(new_ver)) = parse_app(&app).await.map(num_version) {
-        if new_ver != app.ver {
+    match parse_app(&app).await.map(num_version) {
+        Ok(Some(new_ver)) if new_ver != app.ver => {
             let mut app: ver::ActiveModel = app.into();
             app.ver = Set(new_ver.to_owned());
             app.updated_at = Set(Some(Local::now()));
             let app = app.update(&db).await.unwrap();
             println!("{} 更新为版本 {}", app.name.green(), new_ver.bright_green());
             let mut status = status.lock().unwrap();
-            status
-                .get_mut("success")
-                .unwrap()
-                .push(Box::leak(app.name.into_boxed_str()));
-        } else {
+            status.get_mut("success").unwrap().push(app.name.leak());
+        }
+        Ok(Some(new_ver)) => {
             println!("{} : {}", app.name.bright_cyan(), new_ver.bright_cyan());
         }
-    } else {
-        eprintln!("{} 获取版本失败\n{}", app.name, "=".repeat(36));
-        let mut status = status.lock().unwrap();
-        status
-            .get_mut("failed")
-            .unwrap()
-            .push(Box::leak(app.name.into_boxed_str()));
-        return;
-    };
+        _ => {
+            eprintln!("{} 获取版本失败\n{}", app.name, "=".repeat(36));
+            let mut status = status.lock().unwrap();
+            status.get_mut("failed").unwrap().push(app.name.leak());
+            return;
+        }
+    }
     println!("{}", "=".repeat(36));
 }
 
