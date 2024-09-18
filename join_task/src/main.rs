@@ -35,13 +35,14 @@ async fn main() -> anyhow::Result<()> {
     println!("{}\n", serde_json::to_string_pretty(&aj)?);
 
     let apps: Vec<ver::Model> = VerEntity::find().all(&db).await?;
-    let mut tasks = Vec::new();
-    for app in apps {
-        let db = db.clone();
-        let status = status.clone();
-        let t = task::spawn(async move { update_app(app, db, status).await });
-        tasks.push(t);
-    }
+    let tasks: Vec<_> = apps
+        .into_iter()
+        .map(|app| {
+            let db = db.clone();
+            let status = status.clone();
+            task::spawn(async move { update_app(app, db, status).await })
+        })
+        .collect();
     futures::future::join_all(tasks).await;
     println!("用时{:.2?}秒", now.elapsed()?.as_secs_f32());
     let status = status.lock().unwrap();
