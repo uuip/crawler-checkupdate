@@ -1,5 +1,3 @@
-#![allow(unused_variables)]
-
 use std::collections::HashMap;
 use std::io::{stdout, Write};
 use std::sync::{Arc, Mutex};
@@ -59,7 +57,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .all(&db)
         .await?;
-    let tasks = stream::iter(apps)
+    stream::iter(apps)
         .map(|app| {
             let db = db.clone();
             let status = status.clone();
