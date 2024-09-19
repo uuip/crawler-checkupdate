@@ -3,9 +3,8 @@ use std::io::{stdout, Write};
 use std::sync::{Arc, Mutex};
 
 use colored::*;
-use crossterm::event;
-use crossterm::event::Event;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
+use crossterm::{event, event::Event};
 use futures_util::{stream, StreamExt};
 use sea_orm::sqlx::types::chrono::Local;
 use sea_orm::ActiveValue::Set;
