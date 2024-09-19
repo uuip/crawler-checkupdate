@@ -18,7 +18,7 @@ use serde_json::json;
 
 use models::ver;
 use models::VerEntity;
-use rule::{num_version, parse_app};
+use rule::parse_app;
 
 type SharedStatus<'a> = Arc<Mutex<HashMap<&'a str, Vec<&'a str>>>>;
 
@@ -81,8 +81,8 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn update_app(app: ver::Model, db: DatabaseConnection, status: SharedStatus<'_>) {
-    match parse_app(&app).await.ok().and_then(num_version) {
-        Some(new_ver) if new_ver != app.ver => {
+    match parse_app(&app).await {
+        Ok(new_ver) if new_ver != app.ver => {
             let mut app: ver::ActiveModel = app.into();
             app.ver = Set(new_ver.to_owned());
             app.updated_at = Set(Some(Local::now()));
@@ -91,7 +91,7 @@ async fn update_app(app: ver::Model, db: DatabaseConnection, status: SharedStatu
             let mut status = status.lock().unwrap();
             status.get_mut("success").unwrap().push(app.name.leak());
         }
-        Some(new_ver) => {
+        Ok(new_ver) => {
             println!("{} : {}", app.name.bright_cyan(), new_ver.bright_cyan());
         }
         _ => {

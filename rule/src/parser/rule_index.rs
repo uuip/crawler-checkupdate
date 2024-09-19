@@ -1,20 +1,19 @@
 use std::collections::HashMap;
 
-use once_cell::sync::Lazy;
-
+use crate::parser::{appcast, html};
 use crate::FnSignature;
-use crate::{appcast, rules};
+use once_cell::sync::Lazy;
 
 pub static FNRULES: Lazy<HashMap<&'static str, FnSignature>> = Lazy::new(|| {
     let mapper: [(&str, FnSignature); 14] = [
-        ("DevManView", rules::parse_dev_man_view),
-        ("EmEditor", rules::parse_emeditor),
-        ("FS Capture", rules::parse_faststone),
-        ("FS Viewer", rules::parse_faststone),
-        ("VMware", rules::parse_vmware),
-        ("WinRAR", rules::parse_winrar),
-        ("PDF-XChange", rules::parse_pdf_xchange),
-        ("VSCode", rules::parse_vscode),
+        ("DevManView", html::parse_dev_man_view),
+        ("EmEditor", html::parse_emeditor),
+        ("FS Capture", html::parse_faststone),
+        ("FS Viewer", html::parse_faststone),
+        ("VMware", html::parse_vmware),
+        ("WinRAR", html::parse_winrar),
+        ("PDF-XChange", html::parse_pdf_xchange),
+        ("VSCode", html::parse_vscode),
         ("Postico 2", appcast::parse_appcast),
         ("Input Source Pro", appcast::parse_appcast),
         ("SwiftBar", appcast::parse_appcast),

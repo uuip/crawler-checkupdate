@@ -1,29 +1,16 @@
-use std::env;
-use std::time::Duration;
-
 use anyhow::{anyhow, Error};
-use once_cell::sync::Lazy;
-use reqwest::header::HeaderMap;
-use reqwest::{header, Client, Response};
-
 use models::ver;
+use once_cell::sync::Lazy;
+use regex::Regex;
+use reqwest::Response;
+use std::env;
 
-use crate::rule_index::{CSSRULES, FNRULES};
-use crate::rules::parse_css;
+use crate::client::{no_redirect_client, CLIENT};
+use crate::parser::html::parse_css;
+use crate::parser::rule_index::{CSSRULES, FNRULES};
 
 static TOKEN: Lazy<String> = Lazy::new(|| env::var("GITHUB_TOKEN").unwrap_or_default());
-const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:112.0) Gecko/20100101 Firefox/112.0";
-static CLIENT: Lazy<Client> = Lazy::new(|| {
-    let mut headers: HeaderMap = HeaderMap::new();
-    headers.insert(header::USER_AGENT, header::HeaderValue::from_static(UA));
-    Client::builder()
-        .default_headers(headers)
-        .gzip(true)
-        .tcp_keepalive(Some(Duration::from_secs(10)))
-        .http2_keep_alive_interval(Some(Duration::from_secs(10)))
-        .build()
-        .unwrap()
-});
+static VER_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[.\d]*\d+").unwrap());
 
 pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
     match app.name.as_str() {
@@ -33,13 +20,8 @@ pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
             Ok(head.to_owned())
         }
         "EmEditor" => {
-            let resp: Response = Client::builder()
-                .user_agent(UA)
-                .redirect(reqwest::redirect::Policy::none())
-                .build()?
-                .get(&app.url)
-                .send()
-                .await?;
+            let client = no_redirect_client()?;
+            let resp: Response = client.get(&app.url).send().await?;
             let arg: &str = resp.headers()["location"].to_str()?;
             find_version(app, arg).ok_or(anyhow!("解析版本错误"))
         }
@@ -76,9 +58,15 @@ pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
 
 fn find_version(app: &ver::Model, resp: &str) -> Option<String> {
     let app_name = app.name.as_str();
-    if let Some(f) = FNRULES.get(app_name) {
-        f(resp)
-    } else {
-        CSSRULES.get(app_name).map(|css| parse_css(resp, css))?
-    }
+    FNRULES
+        .get(app_name)
+        .and_then(|f| f(resp))
+        .or_else(|| CSSRULES.get(app_name).and_then(|css| parse_css(resp, css)))
+        .and_then(num_version)
+}
+
+pub fn num_version(ver_info: String) -> Option<String> {
+    VER_RE
+        .find(ver_info.as_str())
+        .map(|x| x.as_str().to_string())
 }
