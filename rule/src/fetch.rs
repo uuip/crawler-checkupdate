@@ -46,7 +46,7 @@ pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
                 "Clash" => j["name"].to_string(),
                 _ => j["tag_name"].to_string(),
             };
-            Ok(v)
+            num_version(v).ok_or(anyhow!("解析版本错误"))
         }
         _ => {
             let resp: Response = CLIENT.get(&app.url).send().await?;
