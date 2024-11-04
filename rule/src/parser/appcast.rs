@@ -98,6 +98,8 @@ fn find_sparkle_text(item: &Node, tag: &str, ns: &str) -> Option<String> {
 fn parse_dt(pub_date: &str) -> Result<DateTime<Utc>, ParseError> {
     DateTime::parse_from_rfc3339(pub_date)
         .or_else(|_| DateTime::parse_from_rfc2822(pub_date))
+        .or_else(|_| DateTime::parse_from_str(pub_date, "%d, %a %b %Y %H:%M:%S %z"))
+        .or_else(|_| DateTime::parse_from_str(pub_date, "%B %d, %Y %H:%M:%S %z"))
         .map(|d| d.to_utc())
         .or_else(|_| {
             NaiveDateTime::parse_from_str(pub_date, "%Y-%m-%d %H:%M:%S").map(|d| d.and_utc())

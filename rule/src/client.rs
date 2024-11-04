@@ -1,8 +1,8 @@
 use once_cell::sync::Lazy;
-use reqwest::{header, Client, header::HeaderMap};
+use reqwest::{header, header::HeaderMap, Client};
 use std::time::Duration;
 
-const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:112.0) Gecko/20100101 Firefox/112.0";
+const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:112.0) Gecko/20100101 Firefox/132.0";
 
 pub(crate) static CLIENT: Lazy<Client> = Lazy::new(|| {
     let mut headers: HeaderMap = HeaderMap::new();

@@ -5,7 +5,7 @@ use crate::FnSignature;
 use once_cell::sync::Lazy;
 
 pub static FNRULES: Lazy<HashMap<&'static str, FnSignature>> = Lazy::new(|| {
-    let mapper: [(&str, FnSignature); 14] = [
+    let mapper: [(&str, FnSignature); 18] = [
         ("DevManView", html::parse_dev_man_view),
         ("EmEditor", html::parse_emeditor),
         ("FS Capture", html::parse_faststone),
@@ -20,12 +20,16 @@ pub static FNRULES: Lazy<HashMap<&'static str, FnSignature>> = Lazy::new(|| {
         ("LinearMouse", appcast::parse_appcast),
         ("Docker", appcast::parse_appcast),
         ("AltTab", appcast::parse_appcast),
+        ("Bartender 5", appcast::parse_appcast),
+        ("Typora", appcast::parse_appcast),
+        ("CleanClip", appcast::parse_appcast),
+        ("Contexts", appcast::parse_appcast),
     ];
     HashMap::from(mapper)
 });
 
 pub static CSSRULES: Lazy<HashMap<&'static str, &str>> = Lazy::new(|| {
-    let mapper: [(&str, &str); 13] = [
+    let mapper: [(&str, &str); 14] = [
         ("SecureCRT", "#download-tabs>h4"),
         ("Registry Workshop", "p"),
         ("Firefox", ".c-release-version"),
@@ -45,6 +49,7 @@ pub static CSSRULES: Lazy<HashMap<&'static str, &str>> = Lazy::new(|| {
         ("Git", ".version"),
         ("AIDA64", "td.version"),
         ("Beyond Compare", "div#content h2"),
+        ("XnView MP", ".carousel-description span.text-muted"),
     ];
     HashMap::from(mapper)
 });
