@@ -13,38 +13,41 @@ static TOKEN: Lazy<String> = Lazy::new(|| env::var("GITHUB_TOKEN").unwrap_or_def
 static VER_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[.\d]*\d+").unwrap());
 
 pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
-    match app.name.as_str() {
-        "Fences" => {
+    match app {
+        _app if app.name == "Fences" => {
             let resp: Response = CLIENT.head(&app.url).send().await?;
             let head: &str = resp.headers()["Content-Length"].to_str()?;
             Ok(head.to_owned())
         }
-        "EmEditor" => {
+        _app if app.name == "EmEditor" => {
             let client = no_redirect_client()?;
             let resp: Response = client.get(&app.url).send().await?;
             let arg: &str = resp.headers()["location"].to_str()?;
             find_version(app, arg).ok_or(anyhow!("解析版本错误"))
         }
-        _ if app.json == 1 => {
-            let resp: Response = {
-                if app.url.starts_with("https://api.github.com") {
-                    CLIENT
-                        .get(&app.url)
-                        .header("Authorization", format!("token {}", *TOKEN))
-                        .send()
-                        .await?
-                } else {
-                    CLIENT.get(&app.url).send().await?
-                }
-            };
+        _ if app.url.starts_with("https://api.github.com") => {
+            let resp: Response = CLIENT
+                .get(&app.url)
+                .header("Authorization", format!("token {}", *TOKEN))
+                .send()
+                .await?;
+            let j: serde_json::Value = resp.json::<serde_json::Value>().await?;
+            num_version(j["tag_name"].to_string()).ok_or(anyhow!("解析版本错误"))
+        }
+        _ if app.url.starts_with("https://formulae.brew.sh/") => {
+            let resp: Response = CLIENT.get(&app.url).send().await?;
+            let j: serde_json::Value = resp.json::<serde_json::Value>().await?;
+            num_version(j["version"].to_string()).ok_or(anyhow!("解析版本错误"))
+        }
+        _ if app.url.starts_with("https://data.services.jetbrains.com/") => {
+            let resp: Response = CLIENT.get(&app.url).send().await?;
             let j: serde_json::Value = resp.json::<serde_json::Value>().await?;
             let v: String = match app.name.as_str() {
                 "PyCharm" => j["PCP"][0]["version"].to_string(),
                 "CLion" => j["CL"][0]["version"].to_string(),
                 "GoLand" => j["GO"][0]["version"].to_string(),
                 "RustRover" => j["RR"][0]["version"].to_string(),
-                "Clash" => j["name"].to_string(),
-                _ => j["tag_name"].to_string(),
+                _ => panic!("not support product {}", app.name),
             };
             num_version(v).ok_or(anyhow!("解析版本错误"))
         }
