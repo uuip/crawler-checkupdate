@@ -11,11 +11,11 @@ sea-orm = { version = "1.1.1", features = [
 ] }
 serde_json = "1.0.132"
 
-tokio = { version = "1.41.0", features = ["full"] }
+tokio = { version = "1.41.1", features = ["full"] }
 futures-util = "0.3.31"
 
 colored = "2.1.0"
-anyhow = "1.0.92"
+anyhow = "1.0.93"
 rule = { path = "../rule" }
 models = { path = "../models" }
 crossterm = { version = "0.28.1", default-features = false, features = ["events"] }

@@ -23,7 +23,7 @@ pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
             let client = no_redirect_client()?;
             let resp: Response = client.get(&app.url).send().await?;
             let arg: &str = resp.headers()["location"].to_str()?;
-            find_version(app, arg).ok_or(anyhow!("解析版本错误"))
+            find_version(app, arg).ok_or(anyhow!("解析版本错误: {}", first_10_chars(arg)))
         }
         _ if app.url.starts_with("https://api.github.com") => {
             let resp: Response = CLIENT
@@ -32,12 +32,20 @@ pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
                 .send()
                 .await?;
             let j: serde_json::Value = resp.json::<serde_json::Value>().await?;
-            num_version(j["tag_name"].to_string()).ok_or(anyhow!("解析版本错误"))
+            if let Some(tag_name) = j["tag_name"].as_str() {
+                num_version(tag_name).ok_or(anyhow!("未找到数字: {}", first_10_chars(tag_name)))
+            } else {
+                Err(anyhow!("应答为空"))
+            }
         }
         _ if app.url.starts_with("https://formulae.brew.sh/") => {
             let resp: Response = CLIENT.get(&app.url).send().await?;
             let j: serde_json::Value = resp.json::<serde_json::Value>().await?;
-            num_version(j["version"].to_string()).ok_or(anyhow!("解析版本错误"))
+            if let Some(version) = j["version"].as_str() {
+                num_version(version).ok_or(anyhow!("未找到数字: {}", first_10_chars(version)))
+            } else {
+                Err(anyhow!("应答为空"))
+            }
         }
         _ if app.url.starts_with("https://data.services.jetbrains.com/") => {
             let resp: Response = CLIENT.get(&app.url).send().await?;
@@ -47,14 +55,15 @@ pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
                 "CLion" => j["CL"][0]["version"].to_string(),
                 "GoLand" => j["GO"][0]["version"].to_string(),
                 "RustRover" => j["RR"][0]["version"].to_string(),
+                "DataGrip" => j["DG"][0]["version"].to_string(),
                 _ => panic!("not support product {}", app.name),
             };
-            num_version(v).ok_or(anyhow!("解析版本错误"))
+            num_version(&v).ok_or(anyhow!("未找到数字: {}", first_10_chars(&v)))
         }
         _ => {
             let resp: Response = CLIENT.get(&app.url).send().await?;
             let arg: String = resp.text().await?;
-            find_version(app, &arg).ok_or(anyhow!("解析版本错误"))
+            find_version(app, &arg).ok_or(anyhow!("解析版本错误: {}", first_10_chars(&arg)))
         }
     }
 }
@@ -65,11 +74,14 @@ fn find_version(app: &ver::Model, resp: &str) -> Option<String> {
         .get(app_name)
         .and_then(|f| f(resp))
         .or_else(|| CSSRULES.get(app_name).and_then(|css| parse_css(resp, css)))
-        .and_then(num_version)
+        .and_then(|v| num_version(&v))
 }
 
-pub fn num_version(ver_info: String) -> Option<String> {
-    VER_RE
-        .find(ver_info.as_str())
-        .map(|x| x.as_str().to_string())
+pub fn num_version(ver_info: &str) -> Option<String> {
+    VER_RE.find(ver_info).map(|x| x.as_str().to_string())
+}
+
+fn first_10_chars(s: &str) -> &str {
+    let end = s.char_indices().nth(10).map_or(s.len(), |(idx, _)| idx);
+    &s[..end]
 }

@@ -91,8 +91,8 @@ async fn update_app(app: ver::Model, db: DatabaseConnection, status: SharedStatu
         Ok(new_ver) => {
             println!("{} : {}", app.name.bright_cyan(), new_ver.bright_cyan());
         }
-        _ => {
-            eprintln!("{} 获取版本失败\n{}", app.name, "=".repeat(36));
+        Err(e) => {
+            eprintln!("{} 获取版本失败:{}\n{}", app.name, e, "=".repeat(36));
             let mut status = status.lock().unwrap();
             status.get_mut("failed").unwrap().push(app.name.leak());
             return;
