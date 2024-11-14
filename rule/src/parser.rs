@@ -1,3 +1,3 @@
 pub mod appcast;
+pub mod fn_index;
 pub mod html;
-pub mod rule_index;

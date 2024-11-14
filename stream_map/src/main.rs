@@ -79,9 +79,9 @@ async fn main() -> anyhow::Result<()> {
 
 async fn update_app(app: ver::Model, db: DatabaseConnection, status: SharedStatus<'_>) {
     match parse_app(&app).await {
-        Ok(new_ver) if new_ver != app.ver => {
+        Ok(new_ver) if new_ver != app.verion => {
             let mut app: ver::ActiveModel = app.into();
-            app.ver = Set(new_ver.to_owned());
+            app.verion = Set(new_ver.to_owned());
             app.updated_at = Set(Some(Local::now()));
             let app = app.update(&db).await.unwrap();
             println!("{} 更新为版本 {}", app.name.green(), new_ver.bright_green());

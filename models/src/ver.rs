@@ -6,10 +6,10 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub name: String,
-    pub ver: String,
+    pub verion: String,
     pub url: String,
     pub newversion: Option<String>,
-    pub json: i8,
+    pub check_type: String,
     pub updated_at: Option<ChronoDateTimeLocal>,
     pub platform: Option<String>,
 }
