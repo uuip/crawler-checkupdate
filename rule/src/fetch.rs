@@ -37,7 +37,9 @@ pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
                     .split('_')
                     .last()
                     .and_then(num_version)
-                    .ok_or_else(|| anyhow!("通过location解析版本错误: {}", first_10_chars(location)))
+                    .ok_or_else(|| {
+                        anyhow!("通过location解析版本错误: {}", first_10_chars(location))
+                    })
             }
         },
         "json" => {
@@ -49,7 +51,8 @@ pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
             let path = JsonPath::parse(jsonpath)?;
             let node = path.query(&value).exactly_one()?.as_str();
             if let Some(version) = node {
-                num_version(version).ok_or(anyhow!("未从json中找到数字: {}", first_10_chars(version)))
+                num_version(version)
+                    .ok_or(anyhow!("未从json中找到数字: {}", first_10_chars(version)))
             } else {
                 Err(anyhow!("json应答为空"))
             }

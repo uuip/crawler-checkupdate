@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::io::{stdout, Write};
+use std::io::Write;
 use std::sync::{Arc, Mutex};
 
 use colored::*;
@@ -73,7 +73,7 @@ async fn main() -> anyhow::Result<()> {
         status.get("success").unwrap().join(", "),
         status.get("failed").unwrap().join(", ")
     );
-    pause();
+    pause()?;
     Ok(())
 }
 
@@ -101,15 +101,10 @@ async fn update_app(app: ver::Model, db: DatabaseConnection, status: SharedStatu
     println!("{}", "=".repeat(36));
 }
 
-fn pause() {
-    let mut stdout = stdout();
-    stdout.write_all(b"Press any key to continue...").unwrap();
-    stdout.flush().unwrap();
-    enable_raw_mode().unwrap();
-    loop {
-        if let Event::Key(_) = event::read().unwrap() {
-            break;
-        }
-    }
-    disable_raw_mode().unwrap();
+fn pause() -> std::io::Result<()> {
+    println!("Press any key to continue...");
+    std::io::stdout().flush()?;
+    enable_raw_mode()?;
+    while !matches!(event::read(), Ok(Event::Key(_))) {}
+    disable_raw_mode()
 }

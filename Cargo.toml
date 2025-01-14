@@ -1,10 +1,9 @@
 [workspace]
 members = [
-    # "joinset",
-    "stream_map",
-    # "joinset_mpsc",
-    # "joinset_callback",
-    # "join_task",
+    "joinset",
+    "stream",
+    "channel",
+    "join_task",
     "rule",
     "models",
 ]

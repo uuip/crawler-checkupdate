@@ -40,7 +40,7 @@ pub(crate) fn parse_appcast(text: &str) -> Option<String> {
 
 fn parse_item(item: Node, sparkle: Option<&str>) -> Result<AppItem> {
     let mut pub_date = find_text(&item, "pubDate").unwrap_or_default();
-    pub_date=pub_date.replace("Web","Wed");
+    pub_date = pub_date.replace("Web", "Wed");
     let version1 = find_text(&item, "title").unwrap_or_default();
     let mut version2 = String::new();
     let mut version3 = String::new();

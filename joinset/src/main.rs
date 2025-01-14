@@ -14,13 +14,12 @@ type SharedStatus<'a> = Arc<Mutex<HashMap<&'a str, Vec<&'a str>>>>;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let opt: &str = if cfg!(target_os = "windows") {
-        let _ = enable_ansi_support::enable_ansi_support();
-        //"postgres://postgres:postgres@127.0.0.1/postgres"
-        "sqlite:///C:/Users/sharp/AppData/Local/Programs/checkupdate/ver_tab.db"
-    } else {
-        "sqlite:///Users/sharp/Downloads/ver_tab.db"
-    };
+    #[cfg(windows)]
+    let opt = "sqlite:///C:/Users/sharp/AppData/Local/Programs/checkupdate/ver_tab.db";
+    #[cfg(windows)]
+    let _ = enable_ansi_support::enable_ansi_support();
+    #[cfg(unix)]
+    let opt = "sqlite:///Users/sharp/ver_tab.db";
     let db: DatabaseConnection = Database::connect(opt).await?;
 
     let now = std::time::SystemTime::now();
@@ -51,25 +50,19 @@ async fn main() -> anyhow::Result<()> {
 
 async fn update_app(app: ver::Model, db: DatabaseConnection, status: SharedStatus<'static>) {
     match parse_app(&app).await {
-        Ok(new_ver) if new_ver != app.ver => {
+        Ok(new_ver) if new_ver != app.verion => {
             let mut app: ver::ActiveModel = app.into();
-            app.ver = Set(new_ver.to_owned());
+            app.verion = Set(new_ver.to_owned());
             let app = app.update(&db).await.unwrap();
             println!("{} 更新为版本 {}", app.name.green(), new_ver.bright_green());
             let mut status = status.lock().unwrap();
-            status
-                .get_mut("success")
-                .unwrap()
-                .push(Box::leak(app.name.into_boxed_str()));
+            status.get_mut("success").unwrap().push(app.name.leak());
         }
         Ok(new_ver) => println!("{} : {}", app.name.bright_cyan(), new_ver.bright_cyan()),
         Err(e) => {
             eprintln!("{} 获取版本失败:{}\n{}", app.name, e, "=".repeat(36));
             let mut status = status.lock().unwrap();
-            status
-                .get_mut("failed")
-                .unwrap()
-                .push(Box::leak(app.name.into_boxed_str()));
+            status.get_mut("failed").unwrap().push(app.name.leak());
         }
     }
     println!("{}", "=".repeat(36));
