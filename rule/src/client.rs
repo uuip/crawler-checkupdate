@@ -1,10 +1,10 @@
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 use reqwest::{header, header::HeaderMap, Client};
 use std::time::Duration;
 
 const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:112.0) Gecko/20100101 Firefox/132.0";
 
-pub(crate) static CLIENT: Lazy<Client> = Lazy::new(|| {
+pub(crate) static CLIENT: LazyLock<Client> = LazyLock::new(|| {
     let mut headers: HeaderMap = HeaderMap::new();
     headers.insert(header::USER_AGENT, header::HeaderValue::from_static(UA));
     Client::builder()

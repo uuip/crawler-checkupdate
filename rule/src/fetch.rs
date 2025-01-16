@@ -4,13 +4,13 @@ use crate::parser::fn_index::FNRULES;
 use crate::parser::html::parse_css;
 use anyhow::{anyhow, Error};
 use models::ver;
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 use regex::Regex;
 use serde_json_path::JsonPath;
 use std::env;
 
-static TOKEN: Lazy<String> = Lazy::new(|| env::var("GITHUB_TOKEN").unwrap_or_default());
-static VER_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[.\d]*\d+").unwrap());
+static TOKEN: LazyLock<String> = LazyLock::new(|| env::var("GITHUB_TOKEN").unwrap_or_default());
+static VER_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[.\d]*\d+").unwrap());
 
 pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
     let request = if app.check_type == "json" && app.url.starts_with("https://api.github.com") {
