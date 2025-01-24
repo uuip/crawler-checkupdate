@@ -1,5 +1,5 @@
-use std::sync::LazyLock;
 use reqwest::{header, header::HeaderMap, Client};
+use std::sync::LazyLock;
 use std::time::Duration;
 
 const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:112.0) Gecko/20100101 Firefox/132.0";

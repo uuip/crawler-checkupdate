@@ -4,10 +4,10 @@ use crate::parser::fn_index::FNRULES;
 use crate::parser::html::parse_css;
 use anyhow::{anyhow, Error};
 use models::ver;
-use std::sync::LazyLock;
 use regex::Regex;
 use serde_json_path::JsonPath;
 use std::env;
+use std::sync::LazyLock;
 
 static TOKEN: LazyLock<String> = LazyLock::new(|| env::var("GITHUB_TOKEN").unwrap_or_default());
 static VER_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[.\d]*\d+").unwrap());

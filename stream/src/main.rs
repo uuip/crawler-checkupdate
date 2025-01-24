@@ -17,7 +17,7 @@ use models::ver;
 use models::VerEntity;
 use rule::parse_app;
 
-type SharedStatus<'a> = Arc<Mutex<HashMap<&'a str, Vec<&'a str>>>>;
+type SharedStatus<'a> = Arc<Mutex<HashMap<&'a str, Vec<String>>>>;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -70,23 +70,33 @@ async fn main() -> anyhow::Result<()> {
     let status = status.lock().unwrap();
     println!(
         "成功: {:?}\n失败: {:?}",
-        status.get("success").unwrap().join(", "),
-        status.get("failed").unwrap().join(", ")
+        status
+            .get("success")
+            .map(|item| item.join(", "))
+            .unwrap_or_default(),
+        status
+            .get("failed")
+            .map(|item| item.join(", "))
+            .unwrap_or_default()
     );
     pause()?;
     Ok(())
 }
 
-async fn update_app(app: ver::Model, db: DatabaseConnection, status: SharedStatus<'_>) {
+async fn update_app(
+    app: ver::Model,
+    db: DatabaseConnection,
+    status: SharedStatus<'_>,
+) -> anyhow::Result<()> {
     match parse_app(&app).await {
         Ok(new_ver) if new_ver != app.verion => {
             let mut app: ver::ActiveModel = app.into();
             app.verion = Set(new_ver.to_owned());
             app.updated_at = Set(Some(Local::now()));
-            let app = app.update(&db).await.unwrap();
+            let app = app.update(&db).await?;
             println!("{} 更新为版本 {}", app.name.green(), new_ver.bright_green());
             let mut status = status.lock().unwrap();
-            status.get_mut("success").unwrap().push(app.name.leak());
+            let _ = status.get_mut("success").map(|v| v.push(app.name));
         }
         Ok(new_ver) => {
             println!("{} : {}", app.name.bright_cyan(), new_ver.bright_cyan());
@@ -94,11 +104,12 @@ async fn update_app(app: ver::Model, db: DatabaseConnection, status: SharedStatu
         Err(e) => {
             eprintln!("{} 获取版本失败:{}\n{}", app.name, e, "=".repeat(36));
             let mut status = status.lock().unwrap();
-            status.get_mut("failed").unwrap().push(app.name.leak());
-            return;
+            let _ = status.get_mut("failed").map(|v| v.push(app.name));
+            return Err(e);
         }
     }
     println!("{}", "=".repeat(36));
+    Ok(())
 }
 
 fn pause() -> std::io::Result<()> {

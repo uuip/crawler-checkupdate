@@ -45,8 +45,14 @@ async fn main() -> Result<()> {
     println!("用时{:.2?}秒", now.elapsed()?.as_secs_f32());
     println!(
         "成功: {:?}\n失败: {:?}",
-        status.get("success").unwrap().join(", "),
-        status.get("failed").unwrap().join(", ")
+        status
+            .get("success")
+            .map(|item| item.join(", "))
+            .unwrap_or_default(),
+        status
+            .get("failed")
+            .map(|item| item.join(", "))
+            .unwrap_or_default()
     );
     Ok(())
 }
