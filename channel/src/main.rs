@@ -12,15 +12,16 @@ use rule::parse_app;
 #[tokio::main]
 async fn main() -> Result<()> {
     #[cfg(windows)]
-    let opt = "sqlite:///C:/Users/sharp/AppData/Local/Programs/checkupdate/ver_tab.db";
-    #[cfg(windows)]
-    let _ = enable_ansi_support::enable_ansi_support();
+    {
+        let opt = "sqlite:///C:/Users/sharp/AppData/Local/Programs/checkupdate/ver_tab.db";
+        let _ = enable_ansi_support::enable_ansi_support();
+    }
     #[cfg(unix)]
     let opt = "sqlite:///Users/sharp/ver_tab.db";
     let db: DatabaseConnection = Database::connect(opt).await?;
 
     let now = std::time::SystemTime::now();
-    let mut status: HashMap<&str, Vec<&str>> =
+    let mut status: HashMap<&str, Vec<String>> =
         HashMap::from([("success", Vec::new()), ("failed", Vec::new())]);
 
     let apps: Vec<ver::Model> = VerEntity::find().all(&db).await?;
@@ -61,7 +62,7 @@ async fn update_app(
     app: ver::Model,
     db: &DatabaseConnection,
     new_ver: Result<String>,
-    status: &mut HashMap<&str, Vec<&str>>,
+    status: &mut HashMap<&str, Vec<String>>,
 ) {
     match new_ver {
         Ok(new_ver) if new_ver != app.verion => {
@@ -69,12 +70,12 @@ async fn update_app(
             app.verion = Set(new_ver.to_owned());
             let app = app.update(db).await.unwrap();
             println!("{} 更新为版本 {}", app.name.green(), new_ver.bright_green());
-            status.get_mut("success").unwrap().push(app.name.leak());
+            status.entry("success").or_default().push(app.name);
         }
         Ok(new_ver) => println!("{} : {}", app.name.bright_cyan(), new_ver.bright_cyan()),
         Err(e) => {
             eprintln!("{} 获取版本失败:{}\n{}", app.name, e, "=".repeat(36));
-            status.get_mut("failed").unwrap().push(app.name.leak());
+            status.entry("failed").or_default().push(app.name);
             return;
         }
     }

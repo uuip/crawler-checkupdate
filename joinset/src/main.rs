@@ -10,14 +10,15 @@ use models::ver;
 use models::VerEntity;
 use rule::parse_app;
 
-type SharedStatus<'a> = Arc<Mutex<HashMap<&'a str, Vec<&'a str>>>>;
+type SharedStatus<'a> = Arc<Mutex<HashMap<&'a str, Vec<String>>>>;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     #[cfg(windows)]
-    let opt = "sqlite:///C:/Users/sharp/AppData/Local/Programs/checkupdate/ver_tab.db";
-    #[cfg(windows)]
-    let _ = enable_ansi_support::enable_ansi_support();
+    {
+        let opt = "sqlite:///C:/Users/sharp/AppData/Local/Programs/checkupdate/ver_tab.db";
+        let _ = enable_ansi_support::enable_ansi_support();
+    }
     #[cfg(unix)]
     let opt = "sqlite:///Users/sharp/ver_tab.db";
     let db: DatabaseConnection = Database::connect(opt).await?;
@@ -39,18 +40,22 @@ async fn main() -> anyhow::Result<()> {
     while set.join_next().await.is_some() {}
 
     println!("用时{:.2?}秒", now.elapsed()?.as_secs_f32());
-    let status = status.lock().unwrap();
-    println!(
-        "成功: {:?}\n失败: {:?}",
-        status
-            .get("success")
-            .map(|v| v.join(", "))
-            .unwrap_or_default(),
-        status
-            .get("failed")
-            .map(|v| v.join(", "))
-            .unwrap_or_default()
-    );
+    {
+        let status = status.lock().unwrap();
+        println!(
+            "成功: {:?}\n失败: {:?}",
+            status
+                .get("success")
+                .cloned()
+                .map(|v| v.join(", "))
+                .unwrap_or_default(),
+            status
+                .get("failed")
+                .cloned()
+                .map(|v| v.join(", "))
+                .unwrap_or_default()
+        );
+    }
     Ok(())
 }
 
@@ -65,14 +70,18 @@ async fn update_app(
             app.verion = Set(new_ver.to_owned());
             let app = app.update(&db).await?;
             println!("{} 更新为版本 {}", app.name.green(), new_ver.bright_green());
-            let mut status = status.lock().unwrap();
-            status.get_mut("success").unwrap().push(app.name.leak());
+            {
+                let mut status = status.lock().unwrap();
+                status.entry("success").or_default().push(app.name);
+            }
         }
         Ok(new_ver) => println!("{} : {}", app.name.bright_cyan(), new_ver.bright_cyan()),
         Err(e) => {
             eprintln!("{} 获取版本失败:{}\n{}", app.name, e, "=".repeat(36));
-            let mut status = status.lock().unwrap();
-            status.get_mut("failed").unwrap().push(app.name.leak());
+            {
+                let mut status = status.lock().unwrap();
+                status.entry("failed").or_default().push(app.name);
+            }
         }
     }
     println!("{}", "=".repeat(36));
