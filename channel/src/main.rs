@@ -1,4 +1,5 @@
 use anyhow::Result;
+use futures::StreamExt;
 use mincolor::*;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, EntityTrait};
@@ -24,11 +25,11 @@ async fn main() -> Result<()> {
     let mut status: HashMap<&str, Vec<String>> =
         HashMap::from([("success", Vec::new()), ("failed", Vec::new())]);
 
-    let apps: Vec<ver::Model> = VerEntity::find().all(&db).await?;
+    let mut apps = VerEntity::find().stream(&db).await?;
 
     let (tx, mut rx) = mpsc::channel(100);
 
-    for app in apps {
+    while let Some(Ok(app)) = apps.next().await {
         let tx = tx.clone();
         tokio::spawn(async move {
             let new_ver = parse_app(&app).await;
@@ -38,8 +39,7 @@ async fn main() -> Result<()> {
 
     drop(tx);
 
-    while let Some(i) = rx.recv().await {
-        let (app, new_ver): (ver::Model, Result<String>) = i;
+    while let Some((app, new_ver)) = rx.recv().await {
         update_app(app, &db, new_ver, &mut status).await;
     }
 

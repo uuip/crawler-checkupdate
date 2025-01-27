@@ -6,6 +6,7 @@ use sea_orm::ActiveValue::Set;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, EntityTrait};
 use tokio::task::JoinSet;
 
+use futures::StreamExt;
 use models::ver;
 use models::VerEntity;
 use rule::parse_app;
@@ -29,9 +30,9 @@ async fn main() -> anyhow::Result<()> {
         ("failed", Vec::new()),
     ])));
 
-    let apps: Vec<ver::Model> = VerEntity::find().all(&db).await?;
+    let mut apps = VerEntity::find().stream(&db).await?;
     let mut set = JoinSet::new();
-    for app in apps {
+    while let Some(Ok(app)) = apps.next().await {
         let db = db.clone();
         let status = status.clone();
         set.spawn(async move { update_app(app, db, status).await });

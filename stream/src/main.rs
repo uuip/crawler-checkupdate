@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 use colored::*;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use crossterm::{event, event::Event};
-use futures_util::{stream, StreamExt};
+use futures_util::StreamExt;
 use sea_orm::sqlx::types::chrono::Local;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{
@@ -46,8 +46,9 @@ async fn main() -> anyhow::Result<()> {
                 .eq("Windows")
                 .or(ver::Column::Platform.is_null()),
         )
-        .all(&db)
+        .stream(&db)
         .await?;
+    // stream::iter(vec_apps)
     #[cfg(unix)]
     let apps = VerEntity::find()
         .filter(
@@ -55,17 +56,30 @@ async fn main() -> anyhow::Result<()> {
                 .ne("Windows")
                 .or(ver::Column::Platform.is_null()),
         )
-        .all(&db)
+        .stream(&db)
         .await?;
-    stream::iter(apps)
-        .map(|app| {
-            let db = db.clone();
-            let status = status.clone();
-            async move { update_app(app, db, status).await }
-        })
-        .buffer_unordered(64)
-        .collect::<Vec<_>>()
-        .await;
+    apps.for_each_concurrent(64, |app| {
+        let db = db.clone();
+        let status = status.clone();
+        async move {
+            if let Ok(app) = app {
+                let _ = update_app(app, db, status).await;
+            }
+        }
+    })
+    .await;
+    // apps.map(|app| {
+    //         let db = db.clone();
+    //         let status = status.clone();
+    //         async move {
+    //             if let Ok(app)=app{
+    //                 let _=update_app(app, db, status).await;
+    //             }
+    //         }
+    //     })
+    //     .buffer_unordered(64)
+    //     .collect::<Vec<_>>() //for_each
+    //     .await;
 
     println!("用时{:.2?}秒", now.elapsed()?.as_secs_f32());
     {
