@@ -6,15 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sea-orm = { version = "1.1.4", features = ["sqlx-sqlite", "runtime-tokio-native-tls", "macros"] }
+sea-orm = { workspace = true }
+tokio = { workspace = true }
+futures = { workspace = true }
+anyhow = { workspace = true }
 
-tokio = { version = "1", features = ["full"] }
-futures = "0"
-
-enable-ansi-support = "0"
-mincolor = "2"
-
-anyhow = "1"
-
-rule = { path = "../rule" }
 models = { path = "../models" }
+common = { path = "../common" }
+
+[target.'cfg(windows)'.dependencies]
+enable-ansi-support = "0.2.1"

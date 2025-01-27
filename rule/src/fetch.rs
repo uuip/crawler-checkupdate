@@ -45,7 +45,7 @@ pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
         "json" => {
             let value: serde_json::Value = resp.json::<serde_json::Value>().await?;
             let jsonpath = app
-                .newversion
+                .version_rule
                 .as_deref()
                 .unwrap_or_else(|| panic!("丢失 jsonpath: {}", &app.name));
             let path = JsonPath::parse(jsonpath)?;
@@ -60,7 +60,7 @@ pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
         "css" => {
             let resp: String = resp.text().await?;
             let css = app
-                .newversion
+                .version_rule
                 .as_deref()
                 .unwrap_or_else(|| panic!("丢失css: {}", &app.name));
             parse_css(&resp, css)

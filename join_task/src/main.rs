@@ -1,16 +1,12 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use mincolor::*;
-use sea_orm::ActiveValue::Set;
-use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, EntityTrait};
+use sea_orm::{Database, DatabaseConnection, EntityTrait};
 use tokio::task;
 
+use common::{pause, print_status, update_app, SharedStatus};
 use models::ver;
 use models::VerEntity;
-use rule::parse_app;
-
-type SharedStatus<'a> = Arc<Mutex<HashMap<&'a str, Vec<String>>>>;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -41,55 +37,7 @@ async fn main() -> anyhow::Result<()> {
     futures::future::join_all(tasks).await;
 
     println!("用时{:.2?}秒", now.elapsed()?.as_secs_f32());
-
-    {
-        let status = status.lock().unwrap();
-        println!(
-            "成功: {:?}\n失败: {:?}",
-            status
-                .get("success")
-                .cloned()
-                .map(|s| s.join(", "))
-                .unwrap_or_default(),
-            status
-                .get("failed")
-                .cloned()
-                .map(|s| s.join(", "))
-                .unwrap_or_default()
-        );
-    }
-    Ok(())
-}
-
-async fn update_app(
-    app: ver::Model,
-    db: DatabaseConnection,
-    status: SharedStatus<'static>,
-) -> anyhow::Result<()> {
-    match parse_app(&app).await {
-        Ok(new_ver) if new_ver != app.verion => {
-            let mut app: ver::ActiveModel = app.into();
-            app.verion = Set(new_ver.to_owned());
-            let app = app.update(&db).await?;
-            println!("{} 更新为版本 {}", app.name.green(), new_ver.bright_green());
-            {
-                let mut status = status.lock().unwrap();
-                status.entry("success").or_default().push(app.name)
-            };
-        }
-        Ok(new_ver) => {
-            println!("{} : {}", app.name.bright_cyan(), new_ver.bright_cyan());
-        }
-        Err(e) => {
-            eprintln!("{} 获取版本失败:{}\n{}", app.name, e, "=".repeat(36));
-            {
-                let mut status = status.lock().unwrap();
-                status.entry("failed").or_default().push(app.name);
-            }
-            return Err(e);
-        }
-    }
-
-    println!("{}", "=".repeat(36));
+    print_status(status);
+    pause()?;
     Ok(())
 }

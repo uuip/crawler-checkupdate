@@ -1,11 +1,12 @@
 use anyhow::Result;
+use colored::*;
 use futures::StreamExt;
-use mincolor::*;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, EntityTrait};
 use std::collections::HashMap;
 use tokio::sync::mpsc;
 
+use common::pause;
 use models::ver;
 use models::VerEntity;
 use rule::parse_app;
@@ -19,16 +20,14 @@ async fn main() -> Result<()> {
     }
     #[cfg(unix)]
     let opt = "sqlite:///Users/sharp/ver_tab.db";
-    let db: DatabaseConnection = Database::connect(opt).await?;
 
+    let db: DatabaseConnection = Database::connect(opt).await?;
     let now = std::time::SystemTime::now();
     let mut status: HashMap<&str, Vec<String>> =
         HashMap::from([("success", Vec::new()), ("failed", Vec::new())]);
-
-    let mut apps = VerEntity::find().stream(&db).await?;
-
     let (tx, mut rx) = mpsc::channel(100);
 
+    let mut apps = VerEntity::find().stream(&db).await?;
     while let Some(Ok(app)) = apps.next().await {
         let tx = tx.clone();
         tokio::spawn(async move {
@@ -55,6 +54,7 @@ async fn main() -> Result<()> {
             .map(|item| item.join(", "))
             .unwrap_or_default()
     );
+    pause()?;
     Ok(())
 }
 
@@ -65,9 +65,9 @@ async fn update_app(
     status: &mut HashMap<&str, Vec<String>>,
 ) {
     match new_ver {
-        Ok(new_ver) if new_ver != app.verion => {
+        Ok(new_ver) if new_ver != app.version => {
             let mut app: ver::ActiveModel = app.into();
-            app.verion = Set(new_ver.to_owned());
+            app.version = Set(new_ver.to_owned());
             let app = app.update(db).await.unwrap();
             println!("{} 更新为版本 {}", app.name.green(), new_ver.bright_green());
             status.entry("success").or_default().push(app.name);
