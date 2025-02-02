@@ -13,7 +13,7 @@ use rule::parse_app;
 use sea_orm::entity::ActiveValue::Set;
 use sea_orm::{ActiveModelTrait, DatabaseConnection};
 
-pub type SharedStatus<'a> = Arc<Mutex<HashMap<&'static str, Vec<String>>>>;
+pub type SharedStatus = Arc<Mutex<HashMap<&'static str, Vec<String>>>>;
 
 pub fn pause() -> std::io::Result<()> {
     println!("Press any key to continue...");
@@ -26,7 +26,7 @@ pub fn pause() -> std::io::Result<()> {
 pub async fn update_app(
     app: ver::Model,
     db: DatabaseConnection,
-    status: SharedStatus<'static>,
+    status: SharedStatus,
 ) -> anyhow::Result<()> {
     match parse_app(&app).await {
         Ok(new_ver) if new_ver != app.version => {
