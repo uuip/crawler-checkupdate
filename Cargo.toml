@@ -1,16 +1,27 @@
 [workspace]
 members = [
-    # "joinset",
-    "stream_map",
-    # "joinset_mpsc",
-    # "joinset_callback",
-    # "join_task",
+    "primitives_joinset",
+    "primitives_stream",
+    "primitives_channel",
+    "primitives_join",
     "rule",
-    "models",
+    "models", "common",
 ]
 resolver = "2"
+
+[workspace.dependencies]
+sea-orm = { version = "1.1.4", features = ["sqlx-sqlite", "runtime-tokio", "macros"] }
+tokio = { version = "1", features = ["full"] }
+futures = "0.3.31"
+anyhow = "1"
+chrono = { version = "0.4.39", default-features = false, features = ["clock", "serde"] }
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.137"
 
 [profile.release]
 lto = true
 strip = true
 codegen-units = 1
+panic = "abort"
+opt-level = 3 # 使性能好
+#opt-level = "z" # 使二进制体积小

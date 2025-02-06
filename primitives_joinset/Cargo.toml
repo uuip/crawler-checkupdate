@@ -1,0 +1,18 @@
+[package]
+name = "checkupdate-joinset"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+sea-orm =  { workspace = true }
+tokio =  { workspace = true }
+anyhow = { workspace = true }
+futures = { workspace = true }
+
+models = { path = "../models" }
+common = { path = "../common" }
+
+[target.'cfg(windows)'.dependencies]
+enable-ansi-support = "0.2.1"
