@@ -1,4 +1,5 @@
-use reqwest::{header, header::HeaderMap, Client};
+use reqwest::header::HeaderMap;
+use reqwest::{Client, header};
 use std::sync::LazyLock;
 use std::time::Duration;
 

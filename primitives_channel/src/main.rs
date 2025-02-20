@@ -7,8 +7,8 @@ use std::collections::HashMap;
 use tokio::sync::mpsc;
 
 use common::pause;
-use models::ver;
 use models::VerEntity;
+use models::ver;
 use rule::parse_app;
 
 #[tokio::main]

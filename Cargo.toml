@@ -4,19 +4,20 @@ members = [
     "primitives_stream",
     "primitives_channel",
     "primitives_join",
+    "primitives_stream_dashmap",
     "rule",
     "models", "common",
 ]
 resolver = "2"
 
 [workspace.dependencies]
-sea-orm = { version = "1.1.4", features = ["sqlx-sqlite", "runtime-tokio", "macros"] }
+sea-orm = { version = "1.1.5", features = ["sqlx-sqlite", "runtime-tokio", "macros"] }
 tokio = { version = "1", features = ["full"] }
 futures = "0.3.31"
 anyhow = "1"
 chrono = { version = "0.4.39", default-features = false, features = ["clock", "serde"] }
-serde = { version = "1.0.217", features = ["derive"] }
-serde_json = "1.0.137"
+serde = { version = "1.0.218", features = ["derive"] }
+serde_json = "1.0.139"
 
 [profile.release]
 lto = true

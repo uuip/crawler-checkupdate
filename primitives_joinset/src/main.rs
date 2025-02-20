@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use sea_orm::{Database, DatabaseConnection, EntityTrait};
 use tokio::task::JoinSet;
 
-use common::{pause, print_status, update_app, SharedStatus};
+use common::{SharedStatus, pause, print_status, update_app};
 use futures::StreamExt;
 use models::VerEntity;
 

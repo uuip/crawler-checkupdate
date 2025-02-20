@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use crate::parser::html;
 use crate::FnSignature;
+use crate::parser::html;
 use std::sync::LazyLock;
 
 pub static FNRULES: LazyLock<HashMap<&'static str, FnSignature>> = LazyLock::new(|| {

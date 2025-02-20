@@ -1,8 +1,8 @@
-use crate::client::{no_redirect_client, CLIENT};
+use crate::client::{CLIENT, no_redirect_client};
 use crate::parser::appcast::parse_appcast;
 use crate::parser::fn_index::FNRULES;
 use crate::parser::html::parse_css;
-use anyhow::{anyhow, Error};
+use anyhow::{Error, anyhow};
 use models::ver;
 use regex::Regex;
 use serde_json_path::JsonPath;

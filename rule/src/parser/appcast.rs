@@ -1,5 +1,5 @@
 use anyhow::Result;
-use chrono::{DateTime, NaiveDateTime, ParseError, Utc};
+use chrono::{DateTime, FixedOffset, NaiveDateTime, ParseError, Utc};
 use roxmltree::{ExpandedName, Node};
 
 #[derive(Debug)]
@@ -77,7 +77,7 @@ fn parse_item(item: Node, sparkle: Option<&str>) -> Result<AppItem> {
         version,
         short_version,
         channel,
-        pub_date: parse_dt(&pub_date)?,
+        pub_date: parse_dt(&pub_date).or_else(|_| Ok::<DateTime<Utc>, ParseError>(Utc::now()))?,
     })
 }
 
@@ -97,12 +97,21 @@ fn find_sparkle_text(item: &Node, tag: &str, ns: &str) -> Option<String> {
 }
 
 fn parse_dt(pub_date: &str) -> Result<DateTime<Utc>, ParseError> {
-    DateTime::parse_from_rfc3339(pub_date)
-        .or_else(|_| DateTime::parse_from_rfc2822(pub_date))
-        .or_else(|_| DateTime::parse_from_str(pub_date, "%d, %a %b %Y %H:%M:%S %z"))
-        .or_else(|_| DateTime::parse_from_str(pub_date, "%B %d, %Y %H:%M:%S %z"))
-        .map(|d| d.to_utc())
-        .or_else(|_| {
-            NaiveDateTime::parse_from_str(pub_date, "%Y-%m-%d %H:%M:%S").map(|d| d.and_utc())
-        })
+    type ParseFunc = for<'a> fn(&'a str) -> Result<DateTime<FixedOffset>, ParseError>;
+
+    let parsers: [ParseFunc; 4] = [
+        DateTime::parse_from_rfc3339,
+        DateTime::parse_from_rfc2822,
+        |s| DateTime::parse_from_str(s, "%d, %a %b %Y %H:%M:%S %z"),
+        |s| DateTime::parse_from_str(s, "%B %d, %Y %H:%M:%S %z"),
+    ];
+
+    for parser in &parsers {
+        match parser(pub_date) {
+            Ok(dt) => return Ok(dt.to_utc()),
+            Err(_) => continue,
+        }
+    }
+
+    NaiveDateTime::parse_from_str(pub_date, "%Y-%m-%d %H:%M:%S").map(|d| d.and_utc())
 }

@@ -4,9 +4,9 @@ use std::sync::{Arc, Mutex};
 use sea_orm::{Database, DatabaseConnection, EntityTrait};
 use tokio::task;
 
-use common::{pause, print_status, update_app, SharedStatus};
-use models::ver;
+use common::{SharedStatus, pause, print_status, update_app};
 use models::VerEntity;
+use models::ver;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
