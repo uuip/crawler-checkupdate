@@ -35,7 +35,7 @@ pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
                 let location: &str = resp.headers()["location"].to_str()?;
                 location
                     .split('_')
-                    .last()
+                    .next_back()
                     .and_then(num_version)
                     .ok_or_else(|| {
                         anyhow!("通过location解析版本错误: {}", first_10_chars(location))

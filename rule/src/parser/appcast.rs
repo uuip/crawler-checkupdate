@@ -28,7 +28,7 @@ pub(crate) fn parse_appcast(text: &str) -> Option<String> {
     versions
         .into_iter()
         .filter(|x| x.channel != "beta")
-        .last()
+        .next_back()
         .map(|x| {
             if x.version.contains(".") {
                 x.version
