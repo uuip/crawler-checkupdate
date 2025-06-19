@@ -1,4 +1,4 @@
-use crate::client::{CLIENT, no_redirect_client};
+use crate::client::{CLIENT, NO_REDIRECT_CLIENT};
 use crate::parser::appcast::parse_appcast;
 use crate::parser::fn_index::FNRULES;
 use crate::parser::html::parse_css;
@@ -20,7 +20,7 @@ pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
     } else if app.check_type == "headers" && app.name == "Fences" {
         CLIENT.head(&app.url)
     } else if app.check_type == "headers" {
-        no_redirect_client()?.get(&app.url)
+        NO_REDIRECT_CLIENT.get(&app.url)
     } else {
         CLIENT.get(&app.url)
     };
