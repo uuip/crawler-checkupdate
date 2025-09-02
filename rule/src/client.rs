@@ -17,8 +17,10 @@ pub(crate) static CLIENT: LazyLock<Client> = LazyLock::new(|| {
         .unwrap()
 });
 
-pub(crate) static NO_REDIRECT_CLIENT: LazyLock<Client> = LazyLock::new(|| {    
+pub(crate) static NO_REDIRECT_CLIENT: LazyLock<Client> = LazyLock::new(|| {
     Client::builder()
         .user_agent(UA)
         .redirect(reqwest::redirect::Policy::none())
-        .build()}.unwrap());
+        .build()
+        .unwrap()
+});

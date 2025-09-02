@@ -91,6 +91,10 @@ pub fn num_version<T: AsRef<str>>(ver_info: T) -> Option<String> {
 }
 
 fn first_10_chars(s: &str) -> &str {
-    let end = s.char_indices().nth(10).map_or(s.len(), |(idx, _)| idx);
-    &s[..end]
+    if s.len() <= 10 {
+        s
+    } else {
+        let end = s.char_indices().nth(10).map_or(s.len(), |(idx, _)| idx);
+        &s[..end]
+    }
 }

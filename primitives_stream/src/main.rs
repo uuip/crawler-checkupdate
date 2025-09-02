@@ -5,9 +5,9 @@ use futures::StreamExt;
 use sea_orm::{ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter};
 use serde_json::json;
 
-use common::{pause, print_status, update_app, SharedStatus};
-use models::ver;
+use common::{SharedStatus, pause, print_status, update_app};
 use models::VerEntity;
+use models::ver;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
