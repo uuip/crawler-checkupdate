@@ -11,7 +11,11 @@ struct AppItem {
 }
 
 pub(crate) fn parse_appcast(text: &str) -> Option<String> {
-    let doc = roxmltree::Document::parse(text).unwrap();
+    let doc = roxmltree::Document::parse(text);
+    if doc.is_err() {
+        return None
+    }
+    let doc = doc.unwrap();
     let sparkle = doc
         .root_element()
         .namespaces()
