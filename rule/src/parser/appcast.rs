@@ -31,8 +31,7 @@ pub(crate) fn parse_appcast(text: &str) -> Option<String> {
     versions.sort_by(|a, b| a.pub_date.cmp(&b.pub_date));
     versions
         .into_iter()
-        .filter(|x| x.channel != "beta")
-        .next_back()
+        .rfind(|x| x.channel != "beta")
         .map(|x| {
             if x.version.contains(".") {
                 x.version
