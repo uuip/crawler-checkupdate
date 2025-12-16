@@ -1,5 +1,5 @@
 [package]
-name = "checkupdate-stream"
+name = "checkupdate-stream-dashmap"
 version = "0.1.0"
 edition = "2024"
 
@@ -7,13 +7,12 @@ edition = "2024"
 
 [dependencies]
 sea-orm = { workspace = true }
-serde_json = { workspace = true }
 tokio = { workspace = true }
 futures = { workspace = true }
 anyhow = { workspace = true }
+dashmap = "6.1.0"
 
-models = { path = "../models" }
-common = { path = "../common" }
+common = { path = "../common", features = ["dashmap-support"] }
 
 [target.'cfg(windows)'.dependencies]
 enable-ansi-support = "0.3.1"

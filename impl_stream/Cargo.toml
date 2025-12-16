@@ -1,17 +1,16 @@
 [package]
-name = "checkupdate-joinset"
+name = "checkupdate-stream"
 version = "0.1.0"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sea-orm =  { workspace = true }
-tokio =  { workspace = true }
-anyhow = { workspace = true }
+sea-orm = { workspace = true }
+tokio = { workspace = true }
 futures = { workspace = true }
+anyhow = { workspace = true }
 
-models = { path = "../models" }
 common = { path = "../common" }
 
 [target.'cfg(windows)'.dependencies]

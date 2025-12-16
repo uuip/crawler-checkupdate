@@ -1,22 +1,17 @@
 [package]
-name = "checkupdate-stream-dashmap"
+name = "checkupdate-joinset"
 version = "0.1.0"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sea-orm = { workspace = true }
-serde_json = { workspace = true }
-tokio = { workspace = true }
-futures = { workspace = true }
+sea-orm =  { workspace = true }
+tokio =  { workspace = true }
 anyhow = { workspace = true }
-dashmap = "6.1.0"
-colored = "3.0.0"
+futures = { workspace = true }
 
-models = { path = "../models" }
 common = { path = "../common" }
-rule = { path = "../rule" }
 
 [target.'cfg(windows)'.dependencies]
 enable-ansi-support = "0.3.1"

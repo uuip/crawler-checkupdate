@@ -11,16 +11,12 @@ struct AppItem {
 }
 
 pub(crate) fn parse_appcast(text: &str) -> Option<String> {
-    let doc = roxmltree::Document::parse(text);
-    if doc.is_err() {
-        return None
-    }
-    let doc = doc.unwrap();
+    let doc = roxmltree::Document::parse(text).ok()?;
     let sparkle = doc
         .root_element()
         .namespaces()
         .find(|ns| ns.name() == Some("sparkle"))
-        .map(|t| t.uri());
+        .map(|ns| ns.uri());
 
     let mut versions: Vec<AppItem> = doc
         .descendants()
@@ -28,59 +24,62 @@ pub(crate) fn parse_appcast(text: &str) -> Option<String> {
         .filter_map(|item| parse_item(item, sparkle).ok())
         .collect();
 
-    versions.sort_by(|a, b| a.pub_date.cmp(&b.pub_date));
+    versions.sort_by_key(|v| v.pub_date);
     versions
         .into_iter()
-        .rfind(|x| x.channel != "beta")
-        .map(|x| {
-            if x.version.contains(".") {
-                x.version
+        .rfind(|v| v.channel != "beta")
+        .map(|v| {
+            if v.version.contains('.') {
+                v.version
             } else {
-                x.short_version
+                v.short_version
             }
         })
 }
 
 fn parse_item(item: Node, sparkle: Option<&str>) -> Result<AppItem> {
-    let mut pub_date = find_text(&item, "pubDate").unwrap_or_default();
-    pub_date = pub_date.replace("Web", "Wed");
-    let version1 = find_text(&item, "title").unwrap_or_default();
-    let mut version2 = String::new();
-    let mut version3 = String::new();
-    let mut channel = String::from("release");
+    let pub_date = find_text(&item, "pubDate")
+        .unwrap_or_default()
+        .replace("Web", "Wed");
+
+    let version_title = find_text(&item, "title").unwrap_or_default();
+    let mut version = String::new();
     let mut short_version = String::new();
+    let mut channel = String::from("release");
 
     if let Some(ns) = sparkle {
-        channel = find_sparkle_text(&item, "channel", ns).unwrap_or_else(|| "release".to_string());
-        version2 = find_sparkle_text(&item, ns, "version").unwrap_or_default();
-        short_version = find_sparkle_text(&item, ns, "shortVersionString").unwrap_or_default();
+        channel = find_sparkle_text(&item, ns, "channel").unwrap_or_else(|| "release".to_string());
 
-        if let Some(t) = item.descendants().find(|e| e.has_tag_name("enclosure")) {
-            for attr in t
+        if let Some(v) = find_sparkle_text(&item, ns, "version") {
+            version = v;
+        }
+        if let Some(sv) = find_sparkle_text(&item, ns, "shortVersionString") {
+            short_version = sv;
+        }
+
+        if let Some(enclosure) = item.descendants().find(|e| e.has_tag_name("enclosure")) {
+            for attr in enclosure
                 .attributes()
                 .filter(|a| a.namespace().unwrap_or_default() == ns)
             {
                 match attr.name() {
-                    "version" => version3 = attr.value().to_string(),
+                    "version" => version = attr.value().to_string(),
                     "shortVersionString" => short_version = attr.value().to_string(),
-                    _ => (),
+                    _ => {}
                 }
             }
         }
     }
-    let version = if !version3.is_empty() {
-        version3
-    } else if !version2.is_empty() {
-        version2
-    } else {
-        version1
-    };
+
+    if version.is_empty() {
+        version = version_title;
+    }
 
     Ok(AppItem {
         version,
         short_version,
         channel,
-        pub_date: parse_dt(&pub_date).or_else(|_| Ok::<DateTime<Utc>, ParseError>(Utc::now()))?,
+        pub_date: parse_dt(&pub_date).unwrap_or_else(|_| Utc::now()),
     })
 }
 
@@ -91,7 +90,7 @@ fn find_text(item: &Node, tag: &str) -> Option<String> {
         .map(|t| t.trim().to_owned())
 }
 
-fn find_sparkle_text(item: &Node, tag: &str, ns: &str) -> Option<String> {
+fn find_sparkle_text(item: &Node, ns: &str, tag: &str) -> Option<String> {
     let name = ExpandedName::from((ns, tag));
     item.descendants()
         .find(|e| e.has_tag_name(name))
