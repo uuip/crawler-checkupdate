@@ -10,7 +10,7 @@ sea-orm = { workspace = true }
 tokio = { workspace = true }
 futures = { workspace = true }
 anyhow = { workspace = true }
-dashmap = "6.1.0"
+dashmap = "6.2.1"
 
 common = { path = "../common", features = ["dashmap-support"] }
 

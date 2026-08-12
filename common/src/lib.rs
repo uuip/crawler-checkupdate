@@ -8,7 +8,7 @@ use models::ver;
 use rule::parse_app;
 use sea_orm::entity::ActiveValue::Set;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Select,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, ExprTrait, QueryFilter, Select,
 };
 
 mod pause;
