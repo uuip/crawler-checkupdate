@@ -17,7 +17,7 @@ async fn main() -> anyhow::Result<()> {
         .map(|app| {
             let db = db.clone();
             let status = status.clone();
-            task::spawn(async move { update_app(app, db, &status).await })
+            task::spawn(async move { update_app(app, &db, &status).await })
         })
         .collect();
     futures::future::join_all(tasks).await;

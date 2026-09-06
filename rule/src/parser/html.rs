@@ -32,12 +32,10 @@ pub(crate) fn parse_winrar(resp: &str) -> Option<String> {
 pub(crate) fn parse_vmware(resp: &str) -> Option<String> {
     let html = Html::parse_fragment(resp);
     let selector = Selector::parse("metadata>version").ok()?;
-    let mut versions: Vec<Version> = html
-        .select(&selector)
+    html.select(&selector)
         .filter_map(|x| Version::parse(x.text().next().unwrap_or("0.0.0")).ok())
-        .collect();
-    versions.sort();
-    versions.last().map(ToString::to_string)
+        .max()
+        .map(|version| version.to_string())
 }
 
 pub(crate) fn parse_dev_man_view(resp: &str) -> Option<String> {
@@ -56,4 +54,24 @@ pub(crate) fn parse_pdf_xchange(resp: &str) -> Option<String> {
     let selector = Selector::parse("div.version").ok()?;
     let version_text = html.select(&selector).next()?.text().nth(2)?.trim();
     Some(version_text.to_owned())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_vmware;
+
+    #[test]
+    fn vmware_selects_highest_valid_semver() {
+        for (html, expected) in [
+            ("<metadata><version>invalid</version></metadata>", None),
+            ("<metadata></metadata>", None),
+            ("<metadata><version></version></metadata>", Some("0.0.0")),
+            (
+                "<metadata><version>2.0.0-beta.1</version><version>1.9.0</version><version>2.0.0</version><version>invalid</version></metadata>",
+                Some("2.0.0"),
+            ),
+        ] {
+            assert_eq!(parse_vmware(html).as_deref(), expected);
+        }
+    }
 }

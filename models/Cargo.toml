@@ -8,3 +8,4 @@ edition = "2024"
 [dependencies]
 sea-orm = { workspace = true }
 serde = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }

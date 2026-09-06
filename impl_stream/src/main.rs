@@ -13,13 +13,9 @@ async fn main() -> anyhow::Result<()> {
     let db = Database::connect(get_db_path()).await?;
     let apps = query_apps().stream(&db).await?;
 
-    apps.for_each_concurrent(64, |app| {
-        let db = db.clone();
-        let status = status.clone();
-        async move {
-            if let Ok(app) = app {
-                let _ = update_app(app, db, &status).await;
-            }
+    apps.for_each_concurrent(64, |app| async {
+        if let Ok(app) = app {
+            let _ = update_app(app, &db, &status).await;
         }
     })
     .await;

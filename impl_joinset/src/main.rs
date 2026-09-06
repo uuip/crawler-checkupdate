@@ -18,7 +18,7 @@ async fn main() -> anyhow::Result<()> {
     while let Some(Ok(app)) = apps.next().await {
         let db = db.clone();
         let status = status.clone();
-        set.spawn(async move { update_app(app, db, &status).await });
+        set.spawn(async move { update_app(app, &db, &status).await });
     }
 
     while set.join_next().await.is_some() {}

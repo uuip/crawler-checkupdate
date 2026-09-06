@@ -1,4 +1,4 @@
-use common::{get_db_path, pause, print_status, query_apps, update_app};
+use common::{FAILED_KEY, SUCCESS_KEY, get_db_path, pause, print_status, query_apps, update_app};
 use dashmap::DashMap;
 use futures::StreamExt;
 use sea_orm::Database;
@@ -13,19 +13,15 @@ async fn main() -> anyhow::Result<()> {
 
     let now = std::time::Instant::now();
     let status: SharedStatus = Arc::new(DashMap::from_iter([
-        ("success", Vec::new()),
-        ("failed", Vec::new()),
+        (SUCCESS_KEY, Vec::new()),
+        (FAILED_KEY, Vec::new()),
     ]));
     let db = Database::connect(get_db_path()).await?;
     let apps = query_apps().stream(&db).await?;
 
-    apps.for_each_concurrent(64, |app| {
-        let db = db.clone();
-        let status = status.clone();
-        async move {
-            if let Ok(app) = app {
-                let _ = update_app(app, db, &status).await;
-            }
+    apps.for_each_concurrent(64, |app| async {
+        if let Ok(app) = app {
+            let _ = update_app(app, &db, &status).await;
         }
     })
     .await;
