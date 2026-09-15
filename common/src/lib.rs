@@ -1,5 +1,5 @@
 use chrono::offset::Local;
-use colored::*;
+use colored::Colorize;
 
 use models::ver;
 use rule::parse_app;
@@ -59,7 +59,11 @@ pub async fn update_app<T: StatusRecorder>(
             let mut active_model: ver::ActiveModel = app.into();
             active_model.version = Set(new_ver.clone());
             active_model.updated_at = Set(Some(Local::now()));
-            active_model.update(db).await?;
+            active_model.update(db).await.inspect_err(|e| {
+                eprintln!("{app_name} 更新数据库失败: {e}");
+                status.add_to_list(FAILED_KEY, app_name.clone());
+                println!("{SEPARATOR}");
+            })?;
 
             println!("{} 更新为版本 {}", app_name.green(), new_ver.bright_green());
             status.add_to_list(SUCCESS_KEY, app_name);
@@ -72,7 +76,7 @@ pub async fn update_app<T: StatusRecorder>(
             Ok(())
         }
         Err(e) => {
-            eprintln!("{} 获取版本失败:{}", app_name, e);
+            eprintln!("{app_name} 获取版本失败: {e:#}");
             status.add_to_list(FAILED_KEY, app_name);
             println!("{SEPARATOR}");
             Err(e)

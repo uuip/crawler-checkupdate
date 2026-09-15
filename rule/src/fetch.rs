@@ -2,7 +2,7 @@ use crate::client::{CLIENT, NO_REDIRECT_CLIENT};
 use crate::parser::appcast::parse_appcast;
 use crate::parser::fn_index::FNRULES;
 use crate::parser::html::parse_css;
-use anyhow::{Context, Error};
+use anyhow::{Context, Result};
 use models::ver;
 use regex::Regex;
 use serde_json_path::JsonPath;
@@ -20,16 +20,13 @@ fn preview(s: &str, max_len: usize) -> &str {
     &s[..end]
 }
 
-pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
-    let request = match (app.check_type.as_str(), app.name.as_str()) {
-        ("json", _) if app.url.starts_with("https://api.github.com") => CLIENT
-            .get(&app.url)
-            .header("Authorization", format!("token {}", *TOKEN)),
-        ("headers", "Fences") => CLIENT.head(&app.url),
-        ("headers", _) => NO_REDIRECT_CLIENT.get(&app.url),
-        _ => CLIENT.get(&app.url),
-    };
-    let resp = request.send().await.context("请求失败")?;
+pub async fn parse_app(app: &ver::Model) -> Result<String> {
+    let resp = build_request(app, &TOKEN)?
+        .send()
+        .await
+        .context("请求失败")?
+        .error_for_status()
+        .context("HTTP 状态码错误")?;
 
     match app.check_type.as_str() {
         "headers" => parse_headers(&resp, &app.name),
@@ -40,7 +37,20 @@ pub async fn parse_app(app: &ver::Model) -> Result<String, Error> {
     }
 }
 
-fn parse_headers(resp: &reqwest::Response, app_name: &str) -> Result<String, Error> {
+fn build_request(app: &ver::Model, token: &str) -> Result<reqwest::RequestBuilder> {
+    let url = reqwest::Url::parse(&app.url).context("无效的请求 URL")?;
+    let is_github_api = url.scheme() == "https" && url.host_str() == Some("api.github.com");
+    Ok(match (app.check_type.as_str(), app.name.as_str()) {
+        ("json", _) if is_github_api && !token.is_empty() => CLIENT
+            .get(url)
+            .header("Authorization", format!("token {token}")),
+        ("headers", "Fences") => CLIENT.head(url),
+        ("headers", _) => NO_REDIRECT_CLIENT.get(url),
+        _ => CLIENT.get(url),
+    })
+}
+
+fn parse_headers(resp: &reqwest::Response, app_name: &str) -> Result<String> {
     match app_name {
         "Fences" => {
             let length = resp
@@ -65,7 +75,7 @@ fn parse_headers(resp: &reqwest::Response, app_name: &str) -> Result<String, Err
     }
 }
 
-async fn parse_json_response(resp: reqwest::Response, app: &ver::Model) -> Result<String, Error> {
+async fn parse_json_response(resp: reqwest::Response, app: &ver::Model) -> Result<String> {
     let value: serde_json::Value = resp.json().await?;
     let jsonpath = app
         .version_rule
@@ -82,7 +92,7 @@ async fn parse_json_response(resp: reqwest::Response, app: &ver::Model) -> Resul
         .with_context(|| format!("json 中未找到版本号: {}", preview(version_str, 10)))
 }
 
-async fn parse_css_response(resp: reqwest::Response, app: &ver::Model) -> Result<String, Error> {
+async fn parse_css_response(resp: reqwest::Response, app: &ver::Model) -> Result<String> {
     let text = resp.text().await?;
     let css = app
         .version_rule
@@ -94,14 +104,14 @@ async fn parse_css_response(resp: reqwest::Response, app: &ver::Model) -> Result
         .with_context(|| format!("css 解析失败: {}", preview(&text, 10)))
 }
 
-async fn parse_xml_response(resp: reqwest::Response) -> Result<String, Error> {
+async fn parse_xml_response(resp: reqwest::Response) -> Result<String> {
     let text = resp.text().await?;
     parse_appcast(&text)
         .and_then(num_version)
         .with_context(|| format!("xml 解析失败: {}", preview(&text, 10)))
 }
 
-async fn parse_custom_function(resp: reqwest::Response, app_name: &str) -> Result<String, Error> {
+async fn parse_custom_function(resp: reqwest::Response, app_name: &str) -> Result<String> {
     let text = resp.text().await?;
     FNRULES
         .get(app_name)

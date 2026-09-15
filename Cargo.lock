@@ -397,6 +397,7 @@ name = "checkupdate-channel"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "colored",
  "common",
  "enable-ansi-support",

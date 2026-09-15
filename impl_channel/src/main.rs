@@ -1,5 +1,6 @@
 use anyhow::Result;
-use colored::*;
+use chrono::Local;
+use colored::Colorize;
 use futures::StreamExt;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection};
@@ -17,7 +18,7 @@ async fn main() -> Result<()> {
 
     let db = Database::connect(get_db_path()).await?;
     let now = std::time::Instant::now();
-    let mut status = HashMap::from([(SUCCESS_KEY, Vec::new()), (FAILED_KEY, Vec::new())]);
+    let mut status = HashMap::new();
     let (tx, mut rx) = mpsc::channel(100);
     let mut apps = query_apps().stream(&db).await?;
     while let Some(Ok(app)) = apps.next().await {
@@ -52,16 +53,23 @@ async fn update_app(
         Ok(new_ver) if new_ver != app.version => {
             let mut active_model: ver::ActiveModel = app.into();
             active_model.version = Set(new_ver.clone());
-            if active_model.update(db).await.is_ok() {
-                println!("{} 更新为版本 {}", app_name.green(), new_ver.bright_green());
-                status.entry(SUCCESS_KEY).or_default().push(app_name);
+            active_model.updated_at = Set(Some(Local::now()));
+            match active_model.update(db).await {
+                Ok(_) => {
+                    println!("{} 更新为版本 {}", app_name.green(), new_ver.bright_green());
+                    status.entry(SUCCESS_KEY).or_default().push(app_name);
+                }
+                Err(e) => {
+                    eprintln!("{app_name} 更新数据库失败: {e}");
+                    status.entry(FAILED_KEY).or_default().push(app_name);
+                }
             }
         }
         Ok(new_ver) => {
             println!("{} : {}", app_name.bright_cyan(), new_ver.bright_cyan());
         }
         Err(e) => {
-            eprintln!("{} 获取版本失败:{}", app_name, e);
+            eprintln!("{app_name} 获取版本失败: {e:#}");
             status.entry(FAILED_KEY).or_default().push(app_name);
         }
     }

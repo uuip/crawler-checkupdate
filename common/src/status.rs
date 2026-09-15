@@ -57,8 +57,5 @@ pub fn print_status<T: StatusPrinter>(status: &T) {
 }
 
 pub fn init_status() -> SharedStatus {
-    Arc::new(Mutex::new(HashMap::from([
-        (SUCCESS_KEY, Vec::new()),
-        (FAILED_KEY, Vec::new()),
-    ])))
+    SharedStatus::default()
 }

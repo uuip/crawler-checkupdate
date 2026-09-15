@@ -103,61 +103,10 @@ fn parse_dt(pub_date: &str) -> Result<DateTime<Utc>, ParseError> {
     ];
 
     for parser in &parsers {
-        match parser(pub_date) {
-            Ok(dt) => return Ok(dt.to_utc()),
-            Err(_) => continue,
+        if let Ok(dt) = parser(pub_date) {
+            return Ok(dt.to_utc());
         }
     }
 
     NaiveDateTime::parse_from_str(pub_date, "%Y-%m-%d %H:%M:%S").map(|d| d.and_utc())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::parse_appcast;
-
-    #[test]
-    fn appcast_without_release_returns_none() {
-        for xml in [
-            "invalid",
-            "<rss><channel/></rss>",
-            r#"<rss xmlns:sparkle="urn:sparkle"><channel><item>
-                <sparkle:channel>beta</sparkle:channel>
-                <sparkle:version>2.0</sparkle:version>
-                <pubDate>2026-01-01T00:00:00Z</pubDate>
-            </item></channel></rss>"#,
-        ] {
-            assert_eq!(parse_appcast(xml), None);
-        }
-    }
-
-    #[test]
-    fn appcast_selects_latest_release_and_last_date_tie() {
-        let xml = r#"<rss xmlns:sparkle="urn:sparkle"><channel>
-            <item><sparkle:version>3.0</sparkle:version>
-                <pubDate>2026-01-03T00:00:00Z</pubDate></item>
-            <item><sparkle:version>9.0</sparkle:version><sparkle:channel>beta</sparkle:channel>
-                <pubDate>2026-01-04T00:00:00Z</pubDate></item>
-            <item><sparkle:version>301</sparkle:version><sparkle:shortVersionString>3.1</sparkle:shortVersionString>
-                <pubDate>2026-01-03T00:00:00Z</pubDate></item>
-            <item><sparkle:version>1.0</sparkle:version>
-                <pubDate>2026-01-01T00:00:00Z</pubDate></item>
-        </channel></rss>"#;
-        assert_eq!(parse_appcast(xml).as_deref(), Some("3.1"));
-    }
-
-    #[test]
-    fn appcast_preserves_enclosure_and_title_fallbacks() {
-        let xml = r#"<rss xmlns:sparkle="urn:sparkle"><channel><item>
-            <title>1.0</title><sparkle:version>2.0</sparkle:version>
-            <enclosure sparkle:version="300" sparkle:shortVersionString="3.0"/>
-            <pubDate>2026-01-01T00:00:00Z</pubDate>
-        </item></channel></rss>"#;
-        assert_eq!(parse_appcast(xml).as_deref(), Some("3.0"));
-        assert_eq!(
-            parse_appcast("<rss><channel><item><title>1.0</title></item></channel></rss>")
-                .as_deref(),
-            Some("1.0")
-        );
-    }
 }

@@ -12,14 +12,11 @@ async fn main() -> anyhow::Result<()> {
     let now = std::time::Instant::now();
     let status = init_status();
     let apps = query_apps().all(&db).await?;
-    let tasks: Vec<_> = apps
-        .into_iter()
-        .map(|app| {
-            let db = db.clone();
-            let status = status.clone();
-            task::spawn(async move { update_app(app, &db, &status).await })
-        })
-        .collect();
+    let tasks = apps.into_iter().map(|app| {
+        let db = db.clone();
+        let status = status.clone();
+        task::spawn(async move { update_app(app, &db, &status).await })
+    });
     futures::future::join_all(tasks).await;
 
     println!("用时{:.2}秒", now.elapsed().as_secs_f32());
