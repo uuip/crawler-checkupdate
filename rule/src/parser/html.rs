@@ -9,6 +9,26 @@ pub(crate) fn parse_css(resp: &str, css: &str) -> Option<String> {
     Some(element.to_owned())
 }
 
+pub(crate) fn parse_navicat_mac(resp: &str) -> Option<String> {
+    parse_navicat(resp, "M", "macOS")
+}
+
+pub(crate) fn parse_navicat_windows(resp: &str) -> Option<String> {
+    parse_navicat(resp, "W", "Windows")
+}
+
+fn parse_navicat(resp: &str, platform: &str, system: &str) -> Option<String> {
+    let start = Regex::new(&format!(r#"<table[^>]*platform="{platform}"[^>]*>"#))
+        .ok()?
+        .find(resp)?;
+    let section = resp[start.end()..].split_once("</table>")?.0;
+    Regex::new(&format!(r"Navicat Premium \({system}\) version ([\d.]+)"))
+        .ok()?
+        .captures(section)?
+        .get(1)
+        .map(|m| m.as_str().to_owned())
+}
+
 pub(crate) fn parse_faststone(resp: &str) -> Option<String> {
     let html = Html::parse_document(resp);
     let selector = Selector::parse("b").ok()?;
