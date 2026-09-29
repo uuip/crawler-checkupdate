@@ -10,7 +10,6 @@ members = [
     "common",
 ]
 default-members = ["impl_stream"]
-resolver = "2"
 
 [workspace.dependencies]
 sea-orm = { version = "2.0.2", default-features = false, features = ["sqlx-sqlite", "runtime-tokio", "macros", "with-chrono", "stream", "sqlite-use-returning-for-3_35"] }

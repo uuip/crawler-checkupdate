@@ -29,7 +29,7 @@ pub async fn parse_app(app: &ver::Model) -> Result<String> {
         .context("HTTP 状态码错误")?;
 
     match app.check_type.as_str() {
-        "headers" => parse_headers(&resp, &app.name),
+        "headers" => parse_headers(&resp),
         "json" => parse_json_response(resp, app).await,
         "css" => parse_css_response(resp, app).await,
         "xml" => parse_xml_response(resp).await,
@@ -40,39 +40,26 @@ pub async fn parse_app(app: &ver::Model) -> Result<String> {
 fn build_request(app: &ver::Model, token: &str) -> Result<reqwest::RequestBuilder> {
     let url = reqwest::Url::parse(&app.url).context("无效的请求 URL")?;
     let is_github_api = url.scheme() == "https" && url.host_str() == Some("api.github.com");
-    Ok(match (app.check_type.as_str(), app.name.as_str()) {
-        ("json", _) if is_github_api && !token.is_empty() => CLIENT
+    Ok(match app.check_type.as_str() {
+        "json" if is_github_api && !token.is_empty() => CLIENT
             .get(url)
             .header("Authorization", format!("token {token}")),
-        ("headers", "Fences") => CLIENT.head(url),
-        ("headers", _) => NO_REDIRECT_CLIENT.get(url),
+        "headers" => NO_REDIRECT_CLIENT.get(url),
         _ => CLIENT.get(url),
     })
 }
 
-fn parse_headers(resp: &reqwest::Response, app_name: &str) -> Result<String> {
-    match app_name {
-        "Fences" => {
-            let length = resp
-                .headers()
-                .get("Content-Length")
-                .context("缺少 Content-Length 响应头")?
-                .to_str()?;
-            Ok(length.to_string())
-        }
-        _ => {
-            let location = resp
-                .headers()
-                .get("location")
-                .context("缺少 location 响应头")?
-                .to_str()?;
-            location
-                .split('_')
-                .next_back()
-                .and_then(num_version)
-                .with_context(|| format!("解析 location 失败: {}", preview(location, 10)))
-        }
-    }
+fn parse_headers(resp: &reqwest::Response) -> Result<String> {
+    let location = resp
+        .headers()
+        .get("location")
+        .context("缺少 location 响应头")?
+        .to_str()?;
+    location
+        .split('_')
+        .next_back()
+        .and_then(num_version)
+        .with_context(|| format!("解析 location 失败: {}", preview(location, 10)))
 }
 
 async fn parse_json_response(resp: reqwest::Response, app: &ver::Model) -> Result<String> {

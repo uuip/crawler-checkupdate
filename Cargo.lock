@@ -2236,9 +2236,9 @@ dependencies = [
  "reqwest",
  "roxmltree",
  "scraper",
- "semver",
  "serde_json",
  "serde_json_path",
+ "tokio",
 ]
 
 [[package]]
