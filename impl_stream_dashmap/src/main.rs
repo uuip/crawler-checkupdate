@@ -1,6 +1,6 @@
 use common::{get_db_path, pause, print_status, query_apps, update_app};
 use dashmap::DashMap;
-use futures::StreamExt;
+use futures::stream::{self, StreamExt};
 use sea_orm::Database;
 use std::sync::Arc;
 
@@ -14,14 +14,13 @@ async fn main() -> anyhow::Result<()> {
     let now = std::time::Instant::now();
     let status = SharedStatus::default();
     let db = Database::connect(get_db_path()).await?;
-    let apps = query_apps().stream(&db).await?;
+    let apps = query_apps().all(&db).await?;
 
-    apps.for_each_concurrent(64, |app| async {
-        if let Ok(app) = app {
+    stream::iter(apps)
+        .for_each_concurrent(64, |app| async {
             let _ = update_app(app, &db, &status).await;
-        }
-    })
-    .await;
+        })
+        .await;
 
     println!("用时{:.2}秒", now.elapsed().as_secs_f32());
     print_status(&status);
